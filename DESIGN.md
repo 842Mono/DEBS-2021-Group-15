@@ -1,6 +1,11 @@
 # Problem Statement
 
-Through using the air quality dataset to find which areas improved the most in terms of AQI index compared to the average AQI of the previous year.
+
+The outbreak of COVID-19 in 2020 has created numerous social, economic, and environmental repercussions. As governments announced lockdowns to minimize the spread of the virus, many businesses closed their doors and regular commuters stayed at home, resulting in a reduction in the amount of air pollution caused by traffic and business operations. In fact, the Air Quality Index (AQI) has improved throughout the world since lockdowns began. 
+
+
+This project will address the problem of air pollution and the effects of COVID-19 lockdowns on air pollution by using air quality datasets to detect which areas of the world improved the most in terms of AQI index compared to the average AQI of the previous year. This data analysis will be important for climate groups and governments to detect which countries are most impacted by traffic pollution which will also be helpful for mitigating the inevitable rise of air pollution once the COVID-19 pandemic subsides and lockdowns end.  
+
 
 # Proposed Solution
 

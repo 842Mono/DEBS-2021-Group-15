@@ -9,6 +9,12 @@ This project will address the problem of air pollution and the effects of COVID-
 
 # Proposed Solution
 
+We will implement two queries as outlined by the DEBS Grand Challenge. The first query returns the top 50 cities in terms of air quality improvement as well as their current air quality indices. The AQI for each city will be calculated from the average particles coming from geo-distributed air quality sensors over a sliding window of 24 hours. These windows will be sized relative to the watermark for the result of the batch or relative to the point in time of a snapshot when the snapshot is taken. The average particles over this window will be mapped to AQIp1 and AQIp2 values using a lookup table and formula, and the higher of the two will be taken as the AQI. This query will result in a ranking of the top 50 cities by their improvement over a 5-Day Average AQI compared to the previous year. Additionally, only active cities are included, which means at least one measurement for a city has been received in the last 10 minutes. 
+
+
+The second query results in a histogram of the longest streaks of good air quality for the last 7 days, defined as the time span in seconds since a city flipped to a “good” AQI value. The histogram will have 14 buckets of equal length from 0 to the maximum length, and only active cities will be included. Both query 1 and query 2 will run in parallel. 
+
+
 **We suggest to use Apache Flink to solve our problem. We suggest the following setup:**
 
 - First operator layer to query the API in order to feed it downstream

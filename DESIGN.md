@@ -28,10 +28,7 @@ The expected effects of the proposed solution are efficient processing of air qu
 
 # Experimental Plan
 
-- Experiement with our Flink application by using the provded API test
-- Use test data and provided logic code to compare our accuracy
-- Use the API to test against our solution with the desired ones
-- Grafana dashboards to better identitfy bottlenecks and potential issues
+We plan to experiment our implementation by using the API provided by the DEBS Grand Challenge and running our solution with their tests to see how efficient and correct our solution is compared to solutions from other teams. We will use the dataset provided and starter code to build off of and compare accuracy. We plan to use Grafana dashboards to better identify bottlenecks and potential issues. 
 
 # Success Indicators
 

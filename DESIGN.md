@@ -47,3 +47,14 @@ Efficient processing of air quality data in order to solve the challenge, give u
 4. Having good accuracy, completeing a rudimentary MVP Flink application
 
 # Task assignment
+
+- Baiqing Lyu
+    - Configuring Java gRPC to query data from the competition API
+        - Completing the source layer within the Flink application
+    - Helping in designing Flink application topology
+    - Assist in Flink performance optimizations
+
+- Snigdha Kalathur
+    - TBD
+- Mina Morcos
+    - TBD

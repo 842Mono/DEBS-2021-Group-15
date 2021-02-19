@@ -32,9 +32,7 @@ We plan to experiment our implementation by using the API provided by the DEBS G
 
 # Success Indicators
 
-- Getting data back from the competition API
-- Running the Flink application with no congestion or crashes
-- Getting our solution past the competition
+The expected outcome of our solution is the implementation of the two specified queries in parallel that run correctly and efficiently. Success will be measured by the tests the DEBS Grand Challenge provides for us to utilize as well as our ranking compared to other teams. Our intermediate milestones include getting data from the API provided by the DEBS Grand Challenge by configuring Java gRPC to query the data from this API, completing operators for Query 1 and Query 2, running the Flink application with no congestion or crashes, and getting our solution accepted by the competition. 
 
 ### Intermediate milestones
 

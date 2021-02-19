@@ -55,6 +55,6 @@ Efficient processing of air quality data in order to solve the challenge, give u
     - Assist in Flink performance optimizations
 
 - Snigdha Kalathur
-    - TBD
+    - Implementing the operators for queries 1 and 2
 - Mina Morcos
     - TBD

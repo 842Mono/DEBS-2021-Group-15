@@ -24,7 +24,7 @@ In order to keep track of city data, we recommend the usage of `keyBy` to transf
 
 # Expectations
 
-Efficient processing of air quality data in order to solve the challenge, give us more insight into air data to understand how the pandemic affected the global air changes.
+The expected effects of the proposed solution are efficient processing of air quality data to solve the DEBS Grand Challenge, giving organizations more insight into how the pandemic has affected air quality throughout the world. While the general structure of what needs to be implemented is provided in the DEBS Grand Challenge guidelines, our solution will attempt to run the queries as efficiently as possible by tweaking implementation and other parameters in Apache Flink. 
 
 # Experimental Plan
 

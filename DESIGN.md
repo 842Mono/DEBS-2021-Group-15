@@ -50,7 +50,7 @@ The expected outcome of our solution is the implementation of the two specified 
     - Assist in Flink performance optimizations
 
 - Snigdha Kalathur
-    - Implementing the operators for queries 1 and 2
+    - Designing and implementing the operators for queries 1 and 2
 - Mina Morcos
     - Designing the operators for queries 1 and 2.
     - Implementing the operators for queries 1 and 2.

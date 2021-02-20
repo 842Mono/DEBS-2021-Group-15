@@ -52,4 +52,6 @@ The expected outcome of our solution is the implementation of the two specified 
 - Snigdha Kalathur
     - Implementing the operators for queries 1 and 2
 - Mina Morcos
-    - TBD
+    - Designing the operators for queries 1 and 2.
+    - Implementing the operators for queries 1 and 2.
+    - Final deployment of the application (docker work, etc...)

@@ -14,6 +14,25 @@ We will implement two queries as outlined by the DEBS Grand Challenge. The first
 
 The second query results in a histogram of the longest streaks of good air quality for the last 7 days, defined as the time span in seconds since a city flipped to a “good” AQI value. The histogram will have 14 buckets of equal length from 0 to the maximum length, and only active cities will be included. Both query 1 and query 2 will run in parallel. 
 
+## Considered solutions
+- DIY framework to process the API call and process results
+  - Possibility of higher performance
+  - However may be time consuming and too technical
+- Apache Flink
+  - Supports batching
+  - High-level API
+    - `Map`
+    - `GroupBy`
+    - `Window`
+    - `Join`
+  - Guarantees *exactly-once* processing
+- Apache Storm
+  - High performance
+  - No batching support
+  - Guarantees *at-least-once* processing
+    - *Exactly-once* processing requires **Trident**, another high level API
+
+Since Flink offers easier implementation, faster development and more features, we choose to select Apache Flink to solve our problem.
 
 **We suggest to use Apache Flink to solve our problem. We suggest the following setup:**
 
@@ -48,10 +67,18 @@ The expected outcome of our solution is the implementation of the two specified 
         - Completing the source layer within the Flink application
     - Helping in designing Flink application topology
     - Assist in Flink performance optimizations
-
 - Snigdha Kalathur
     - Designing and implementing the operators for queries 1 and 2
+    - Assisting in researching Flink usage
 - Mina Morcos
     - Designing the operators for queries 1 and 2.
     - Implementing the operators for queries 1 and 2.
     - Final deployment of the application (docker work, etc...)
+
+# Note about task dependency, task sequencing and duplicate tasks.
+
+Some of the tasks depend on other tasks. There are design tasks and implementation tasks. Generally, we believe that implementation tasks depend on design tasks. We should be designing before we implement. Also, the final deployment task should be done at the very end (after we're done designing and implementing). So the order should be something like: design, then implement, then deploy. However, these rules are not 100% strict. We may adjust our designs while implementing. Also, after deployment, we may improve our design and then re-implement and then re-deploy. So it might turn out to be a bit of an iterative process.
+
+For duplicate tasks, we will most definitely meet in order to discuss how we will tackle a task. During the meeting, we should decide whether we will divide the task into sub-tasks or whether we will just sit down together and collaborate on the task (maybe if the task seems to be tougher than usual). It should highly depend on the task.
+
+Those were our thoughts about the topic. We think that these thoughts are like a blue print. Things will get clearer as we go deeper into the work.

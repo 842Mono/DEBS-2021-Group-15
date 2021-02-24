@@ -14,6 +14,25 @@ We will implement two queries as outlined by the DEBS Grand Challenge. The first
 
 The second query results in a histogram of the longest streaks of good air quality for the last 7 days, defined as the time span in seconds since a city flipped to a “good” AQI value. The histogram will have 14 buckets of equal length from 0 to the maximum length, and only active cities will be included. Both query 1 and query 2 will run in parallel. 
 
+## Considered solutions
+- DIY framework to process the API call and process results
+  - Possibility of higher performance
+  - However may be time consuming and too technical
+- Apache Flink
+  - Supports batching
+  - High-level API
+    - `Map`
+    - `GroupBy`
+    - `Window`
+    - `Join`
+  - Guarantees *exactly-once* processing
+- Apache Storm
+  - High performance
+  - No batching support
+  - Guarantees *at-least-once* processing
+    - *Exactly-once* processing requires **Trident**, another high level API
+
+Since Flink offers easier implementation, faster development and more features, we choose to select Apache Flink to solve our problem.
 
 **We suggest to use Apache Flink to solve our problem. We suggest the following setup:**
 
@@ -48,9 +67,9 @@ The expected outcome of our solution is the implementation of the two specified 
         - Completing the source layer within the Flink application
     - Helping in designing Flink application topology
     - Assist in Flink performance optimizations
-
 - Snigdha Kalathur
     - Designing and implementing the operators for queries 1 and 2
+    - Assisting in researching Flink usage
 - Mina Morcos
     - Designing the operators for queries 1 and 2.
     - Implementing the operators for queries 1 and 2.

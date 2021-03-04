@@ -1,0 +1,33 @@
+digraph "GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" { 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "com.google.protobuf:protobuf-java:jar:3.6.1:compile" ; 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "io.grpc:grpc-netty-shaded:jar:1.15.1:compile" ; 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "io.grpc:grpc-protobuf:jar:1.15.1:compile" ; 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "io.grpc:grpc-stub:jar:1.15.1:compile" ; 
+	"io.grpc:grpc-netty-shaded:jar:1.15.1:compile" -> "io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "io.grpc:grpc-context:jar:1.15.1:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "com.google.code.gson:gson:jar:2.7:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "com.google.errorprone:error_prone_annotations:jar:2.2.0:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "com.google.code.findbugs:jsr305:jar:3.0.0:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "org.codehaus.mojo:animal-sniffer-annotations:jar:1.17:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "io.opencensus:opencensus-api:jar:0.12.3:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "io.opencensus:opencensus-contrib-grpc-metrics:jar:0.12.3:compile" ; 
+	"io.grpc:grpc-protobuf:jar:1.15.1:compile" -> "com.google.guava:guava:jar:20.0:compile" ; 
+	"io.grpc:grpc-protobuf:jar:1.15.1:compile" -> "com.google.api.grpc:proto-google-common-protos:jar:1.0.0:compile" ; 
+	"io.grpc:grpc-protobuf:jar:1.15.1:compile" -> "io.grpc:grpc-protobuf-lite:jar:1.15.1:compile" ; 
+ } digraph "GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" { 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "com.google.protobuf:protobuf-java:jar:3.6.1:compile" ; 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "io.grpc:grpc-netty-shaded:jar:1.15.1:compile" ; 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "io.grpc:grpc-protobuf:jar:1.15.1:compile" ; 
+	"GrpcClient:GrpcClient:jar:0.0.1-SNAPSHOT" -> "io.grpc:grpc-stub:jar:1.15.1:compile" ; 
+	"io.grpc:grpc-netty-shaded:jar:1.15.1:compile" -> "io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "io.grpc:grpc-context:jar:1.15.1:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "com.google.code.gson:gson:jar:2.7:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "com.google.errorprone:error_prone_annotations:jar:2.2.0:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "com.google.code.findbugs:jsr305:jar:3.0.0:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "org.codehaus.mojo:animal-sniffer-annotations:jar:1.17:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "io.opencensus:opencensus-api:jar:0.12.3:compile" ; 
+	"io.grpc:grpc-core:jar:1.15.1:compile (version selected from constraint [1.15.1,1.15.1])" -> "io.opencensus:opencensus-contrib-grpc-metrics:jar:0.12.3:compile" ; 
+	"io.grpc:grpc-protobuf:jar:1.15.1:compile" -> "com.google.guava:guava:jar:20.0:compile" ; 
+	"io.grpc:grpc-protobuf:jar:1.15.1:compile" -> "com.google.api.grpc:proto-google-common-protos:jar:1.0.0:compile" ; 
+	"io.grpc:grpc-protobuf:jar:1.15.1:compile" -> "io.grpc:grpc-protobuf-lite:jar:1.15.1:compile" ; 
+ } 

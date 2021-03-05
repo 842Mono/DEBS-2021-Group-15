@@ -1,0 +1,31 @@
+Query 1
+
+Goal: return the top 50 cities by AQI improvement as well as their current AQIs.
+
+For the current window, the latest event is watermark - 24hr
+
+Use data over sliding window to calculate AQI1 and AQI2 using formula
+Select the max of the two values as the AQI.
+
+Computing improvement:
+Every 5 minutes, a snapshot of the AQI of current year and AQI Of previous year are taken and inserted into a separate window
+
+Current AQI average is time of snapshot - 5 days
+Previous AQI average window is snapshot - 365 days - 5 days
+
+Snapshots taken at 8:00, 8:05, 8:10, etc
+
+At each snapshot, the max AQIp1 and AQIp2 of current and past year are taken from windows resized according to snapshot time
+
+Current: snapshot time - 24 hours
+Historic: snapshot time - 365D - 24hr
+
+Once all measurements of batch are processed, results are summarized
+Only active cities should be reported in result, so must have had a measurement received in the past 10 minutes.
+
+Rank cities according to 5 day average AQI compared to previous year (derived from window sized relative to last measurement)
+
+The current AQIp1 and AQIp2 are added per city
+
+If less than 5 minutes of events… empty list expected as result
+If not sensor is active…empty list expected as result

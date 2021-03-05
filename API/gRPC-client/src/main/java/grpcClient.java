@@ -41,14 +41,20 @@ public class grpcClient {
         System.out.println("Benchmark ID: " + benchmark.getId());
         
         // Get locations
+        System.out.println("Getting location data...");
         Locations locations = client.getLocations(benchmark);
+        System.out.println("Location recieved!");
         
         // Start latency measuring
+        System.out.println("Started latency adjustments");
         Ping ping = client.initializeLatencyMeasuring(benchmark);
         for (int i = 0; i < 10; i++){
+            System.out.println("Ping...");
             client.measure(ping);
+            System.out.println("Pong!");
         }
         client.endMeasurement(ping);
+        System.out.println("Finished lantency adjustments");
 
         // Start benchmark, the race is on
         client.startBenchmark(benchmark);
@@ -58,6 +64,9 @@ public class grpcClient {
         int cnt = 0;
         while(true) {
             Batch batch = client.nextBatch(benchmark);
+            System.out.println("Processing batch #" + cnt);
+            System.out.println(batch.getCurrentList());
+            System.out.println(batch.getLastyearList());
             if (batch.getLast()) { //Stop when we get the last batch
                 System.out.println("Received lastbatch, finished!");
                 break;

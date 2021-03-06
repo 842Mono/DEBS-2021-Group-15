@@ -6,12 +6,12 @@ com/grpc/Measurement.class
 com/grpc/ChallengerGrpc$ChallengerFileDescriptorSupplier.class
 com/grpc/ChallengerGrpc$ChallengerMethodDescriptorSupplier.class
 com/grpc/Benchmark$1.class
-com/grpc/TopKCities.class
 com/grpc/Location$Builder.class
+com/grpc/TopKCities.class
 com/grpc/ResultQ1OrBuilder.class
 com/grpc/Ping$Builder.class
-com/grpc/BenchmarkConfiguration$Query.class
 com/grpc/BenchmarkConfigurationOrBuilder.class
+com/grpc/BenchmarkConfiguration$Query.class
 com/grpc/MeasurementOrBuilder.class
 com/grpc/Polygon.class
 com/grpc/PointOrBuilder.class
@@ -31,8 +31,8 @@ com/grpc/ChallengerGrpc$ChallengerStub.class
 com/grpc/ResultQ2$1.class
 com/grpc/LocationsOrBuilder.class
 com/grpc/ChallengerGrpc$MethodHandlers.class
-com/grpc/ResultQ1.class
 com/grpc/Point.class
+com/grpc/ResultQ1.class
 com/grpc/Ping.class
 com/grpc/Batch$Builder.class
 com/grpc/ResultQ2OrBuilder.class
@@ -50,8 +50,8 @@ com/grpc/ChallengerGrpc$ChallengerBlockingStub.class
 com/grpc/Location$1.class
 com/grpc/Measurement$1.class
 com/grpc/BenchmarkOrBuilder.class
-com/grpc/TopKStreaks$1.class
 com/grpc/ChallengerProto.class
+com/grpc/TopKStreaks$1.class
 com/grpc/Locations$Builder.class
 com/grpc/ChallengerGrpc.class
 com/grpc/ChallengerGrpc$ChallengerImplBase.class

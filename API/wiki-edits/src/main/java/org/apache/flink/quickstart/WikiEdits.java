@@ -1,0 +1,72 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.flink.quickstart;
+
+import org.apache.flink.api.common.functions.FilterFunction;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.streaming.connectors.wikiedits.WikipediaEditEvent;
+
+import grpcPackage.grpcClient;
+
+/**
+ * A simple Flink program that processes the Wikipedia edits stream.
+ **/
+public class WikiEdits {
+
+	public static void main(String[] args) throws Exception {
+		// set up the streaming execution environment
+//		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+//
+//		env.setParallelism(1); // use 1 processing tasks
+//
+//		DataStream<WikipediaEditEvent> edits = env
+//				.addSource(new WikipediaEditsSource());
+//
+//		// filter events with bytediff < 0
+//		DataStream<WikipediaEditEvent> filtered = edits.filter(new MyFilterFunction());
+//
+//		DataStream<Tuple4<String, Long, Integer, String>> mappedEdits = filtered.map(new MyMapFunction());
+//
+//		mappedEdits.print();
+//
+//		// execute program
+//		env.execute("Print Wikipedia Edits Stream");
+
+		grpcClient.FakeMain();
+	}
+
+	// filter operator logic
+	private static class MyFilterFunction implements FilterFunction<WikipediaEditEvent> {
+		@Override
+		public boolean filter(WikipediaEditEvent e) throws Exception {
+			return e.getByteDiff() > 0;
+		}
+	}
+
+	// Projects userId, timestamp, bytediff, title
+	private static class MyMapFunction implements MapFunction<WikipediaEditEvent, Tuple4<String, Long, Integer, String>> {
+		@Override
+		public Tuple4<String, Long, Integer, String> map(WikipediaEditEvent e) throws Exception {
+			return Tuple4.of(e.getUser(), e.getTimestamp(), e.getByteDiff(), e.getTitle());
+		}
+	}
+}
+
+

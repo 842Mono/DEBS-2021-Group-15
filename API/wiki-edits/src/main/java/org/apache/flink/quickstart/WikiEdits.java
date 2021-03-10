@@ -18,12 +18,16 @@
 
 package org.apache.flink.quickstart;
 
+import com.grpc.Measurement;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.wikiedits.WikipediaEditEvent;
 
 import grpcPackage.grpcClient;
+import org.apache.flink.streaming.connectors.wikiedits.WikipediaEditsSource;
 
 /**
  * A simple Flink program that processes the Wikipedia edits stream.
@@ -31,11 +35,23 @@ import grpcPackage.grpcClient;
 public class WikiEdits {
 
 	public static void main(String[] args) throws Exception {
+
+
 		// set up the streaming execution environment
-//		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//
-//		env.setParallelism(1); // use 1 processing tasks
-//
+		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+		env.setParallelism(1); // use 1 processing tasks
+
+		DataStream<Measurement> measurements = env.addSource(new grpcClient());
+
+		measurements.print();
+
+		env.execute("Print Wikipedia Edits Stream");
+
+
+
+		//old code. keeping it for now just for reference.
+
 //		DataStream<WikipediaEditEvent> edits = env
 //				.addSource(new WikipediaEditsSource());
 //
@@ -49,7 +65,7 @@ public class WikiEdits {
 //		// execute program
 //		env.execute("Print Wikipedia Edits Stream");
 
-		grpcClient.FakeMain();
+//		grpcClient.FakeMain();
 	}
 
 	// filter operator logic

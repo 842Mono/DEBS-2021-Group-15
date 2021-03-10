@@ -3,23 +3,88 @@ package grpcPackage;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.grpc.*;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.ManagedChannel;
 
-import com.grpc.Batch;
-import com.grpc.Benchmark;
-import com.grpc.BenchmarkConfiguration;
-import com.grpc.ChallengerGrpc;
-import com.grpc.Locations;
-import com.grpc.Ping;
-import com.grpc.ResultQ1;
-import com.grpc.ResultQ2;
 import com.grpc.ChallengerGrpc.ChallengerBlockingStub;
-import com.grpc.TopKStreaks;
-import com.grpc.TopKCities;
+import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 
-public class grpcClient {
+public class grpcClient extends RichSourceFunction<Measurement> { //<Data> {
 
+    public void run(SourceContext<Measurement> ctx){ //<Data> ctx) {
+
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("challenge.msrg.in.tum.de", 5023).usePlaintext().build();
+
+        // Create a blocking stub because we need to make sure this response is recieved
+        ChallengerBlockingStub client = ChallengerGrpc.newBlockingStub(channel)
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        // Create a configuration object to be passed into the first set of creating a benchmark
+        BenchmarkConfiguration benchmarkConfig = BenchmarkConfiguration.newBuilder()
+                .setToken("gppciibyukfkxidslfbdqofvnuzocnww")
+                .setBatchSize(100)
+                .setBenchmarkName("group-15")
+                .setBenchmarkType("test")
+                .addQueries(BenchmarkConfiguration.Query.Q1)
+                .addQueries(BenchmarkConfiguration.Query.Q2)
+                .build();
+
+        // Initiate step one and send over the benchmarkConfig
+        Benchmark benchmark = client.createNewBenchmark(benchmarkConfig);
+        System.out.println("Benchmark ID: " + benchmark.getId());
+
+        // Get locations
+        System.out.println("Getting location data...");
+        Locations locations = client.getLocations(benchmark);
+        System.out.println("Location recieved!");
+
+        // Start latency measuring
+        System.out.println("Started latency adjustments");
+        Ping ping = client.initializeLatencyMeasuring(benchmark);
+        for (int i = 0; i < 10; i++){
+            System.out.println("Ping...");
+            client.measure(ping);
+            System.out.println("Pong!");
+        }
+        client.endMeasurement(ping);
+        System.out.println("Finished lantency adjustments");
+
+        // Start benchmark, the race is on
+        client.startBenchmark(benchmark);
+        System.out.println("Bechmark Started!");
+
+        //Process the events
+        int cnt = 0;
+        while(true) {
+            Batch batch = client.nextBatch(benchmark);
+
+            List<Measurement> currentYearMeasurements = batch.getCurrentList();
+            List<Measurement> lastYearMeasurements = batch.getLastyearList();
+
+            for(int i = 0; i < currentYearMeasurements.size(); ++i) {
+                ctx.collect(currentYearMeasurements.get(i));
+            }
+            for(int i = 0; i < lastYearMeasurements.size(); ++i)
+            {
+                ctx.collect(lastYearMeasurements.get(i));
+            }
+
+
+
+            if (batch.getLast()) { //Stop when we get the last batch
+                System.out.println("Received lastbatch, finished!");
+                break;
+            }
+        }
+
+    }
+
+    public void cancel() { System.out.println("CANCEL CALLED. TODO."); }
+
+
+    //We can remove this.
     public static void FakeMain() { //(String[] args) {
         // Create channel to call to API servers
         ManagedChannel channel = ManagedChannelBuilder.forAddress("challenge.msrg.in.tum.de", 5023).usePlaintext().build();

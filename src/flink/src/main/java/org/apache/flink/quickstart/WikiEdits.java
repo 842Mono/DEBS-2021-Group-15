@@ -27,8 +27,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.wikiedits.WikipediaEditEvent;
 
 import grpcPackage.grpcClient;
-import org.apache.flink.streaming.connectors.wikiedits.WikipediaEditsSource;
 
+import com.thanglequoc.aqicalculator.AQICalculator;
+import com.thanglequoc.aqicalculator.AQIResult;
+import com.thanglequoc.aqicalculator.Pollutant;
 /**
  * A simple Flink program that processes the Wikipedia edits stream.
  **/
@@ -46,8 +48,12 @@ public class WikiEdits {
 
 		measurements.print();
 
-		env.execute("Print Wikipedia Edits Stream");
+		env.execute("Print Measurements Stream");
 
+		// Get AQI calculator
+		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
+		AQIResult result = aqicalc.getAQI(Pollutant.PM10, 50);
+		AQIResult result2 = aqicalc.getAQI(Pollutant.PM25, 50);
 
 
 		//old code. keeping it for now just for reference.

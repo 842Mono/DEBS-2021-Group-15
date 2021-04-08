@@ -24,7 +24,6 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.wikiedits.WikipediaEditEvent;
 
 import grpcPackage.grpcClient;
 
@@ -34,7 +33,7 @@ import com.thanglequoc.aqicalculator.Pollutant;
 /**
  * A simple Flink program that processes the Wikipedia edits stream.
  **/
-public class WikiEdits {
+public class application {
 
 	public static void main(String[] args) throws Exception {
 
@@ -74,21 +73,7 @@ public class WikiEdits {
 //		grpcClient.FakeMain();
 	}
 
-	// filter operator logic
-	private static class MyFilterFunction implements FilterFunction<WikipediaEditEvent> {
-		@Override
-		public boolean filter(WikipediaEditEvent e) throws Exception {
-			return e.getByteDiff() > 0;
-		}
-	}
 
-	// Projects userId, timestamp, bytediff, title
-	private static class MyMapFunction implements MapFunction<WikipediaEditEvent, Tuple4<String, Long, Integer, String>> {
-		@Override
-		public Tuple4<String, Long, Integer, String> map(WikipediaEditEvent e) throws Exception {
-			return Tuple4.of(e.getUser(), e.getTimestamp(), e.getByteDiff(), e.getTitle());
-		}
-	}
 }
 
 

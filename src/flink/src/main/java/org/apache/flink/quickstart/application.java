@@ -47,12 +47,19 @@ public class application {
 
 		measurements.print();
 
+		// Testing to see if I can connect operators
+		measurements.shuffle();
+
 		env.execute("Print Measurements Stream");
 
 		// Get AQI calculator
 		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 		AQIResult result = aqicalc.getAQI(Pollutant.PM10, 50);
 		AQIResult result2 = aqicalc.getAQI(Pollutant.PM25, 50);
+		
+		System.out.println("Calculated AQI results");
+		System.out.println(result.getAQI());
+		System.out.println(result2.getAQI());
 
 
 		//old code. keeping it for now just for reference.

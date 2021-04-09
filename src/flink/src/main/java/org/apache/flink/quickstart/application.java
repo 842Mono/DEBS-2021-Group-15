@@ -55,11 +55,14 @@ public class application {
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient());
 
 //		measurements.print();
+		// Set particular parallelism
+		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity()).setParallelism(4);
 
-		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity());
+		// Branches out a different operator, (since query 1 and 2 need to recieve data from the same data stream)
+		DataStream<Team8Measurement> calculateCityFilter = measurements.filter();
 
 //		calculateCity.print();
-
+		// Different parallelism splits
 		DataStream<Team8Measurement> filterNoCity = calculateCity.filter(m -> !m.city.equals("CITYERROR"));
 
 //		filterNoCity.print();
@@ -157,7 +160,6 @@ public class application {
 			else {
 				return result25;
 			}
-
 		}
 	}
 

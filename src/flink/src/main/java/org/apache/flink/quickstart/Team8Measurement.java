@@ -4,7 +4,7 @@ import com.grpc.Measurement;
 
 public class Team8Measurement {
 
-    String city;
+    String city = "";
     Measurement measurement;
     String year; //too lazy to Enum it. Can either be "ThisYear" or "LastYear".
 

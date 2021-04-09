@@ -23,6 +23,7 @@ import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -53,10 +54,17 @@ public class application {
 
 //		measurements.print();
 
-//		SingleOutputStreamOperator<Team8Measurement>
 		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity());
 
-		calculateCity.print();
+//		calculateCity.print();
+
+		DataStream<Team8Measurement> filterNoCity = calculateCity.filter(m -> !m.city.equals("CITYERROR"));
+
+//		filterNoCity.print();
+
+		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = filterNoCity.keyBy(m -> m.city);
+
+		measurementsKeyedByCity.print();
 
 		// Testing to see if I can connect operators
 //		calculateCity.shuffle();
@@ -143,8 +151,14 @@ public class application {
 		}
 	}
 
-
-
+//	filterNoCity = filterNoCity.map(new JustUsingMapToTest());
+//	private static class JustUsingMapToTest implements MapFunction<Team8Measurement, Team8Measurement> {
+//		@Override
+//		public Team8Measurement map(Team8Measurement m) throws Exception {
+//			System.out.println("TESTING1. CITY = " + m.city);
+//			return m;
+//		}
+//	}
 
 }
 

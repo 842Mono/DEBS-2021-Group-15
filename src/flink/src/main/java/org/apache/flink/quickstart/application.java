@@ -48,7 +48,7 @@ public class application {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.setParallelism(16);
+		env.setParallelism(1);
 
 		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
@@ -59,7 +59,7 @@ public class application {
 //		measurements.print();
 		// Set particular parallelism
 		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity())
-																	.setParallelism(4)
+																	.setParallelism(1)
 																	.name("calculateCity")
 																	.rebalance();
 
@@ -70,7 +70,7 @@ public class application {
 		// Different parallelism splits
 		DataStream<Team8Measurement> filterNoCity = calculateCity.filter(m -> !m.city.equals("CITYERROR"))
 																	.name("filterNoCity")
-																	.setParallelism(8)
+																	.setParallelism(1)
 																	.rescale();
 
 //		filterNoCity.print();

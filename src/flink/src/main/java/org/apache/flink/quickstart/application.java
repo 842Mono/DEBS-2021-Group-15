@@ -50,6 +50,8 @@ public class application {
 
 		env.setParallelism(8); // use 1 processing tasks
 
+		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
+
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient());
 
 //		measurements.print();
@@ -141,12 +143,10 @@ public class application {
 			return false;
 		}
 
-		private int computeAQI(Measurement measurement) {
+		private int computeAQI(Measurement measurement, AQICalculator aqicalc) {
 
 			float pm25 = measurement.getP1();
 			float pm10 = measurement.getP2();
-
-			AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 			int result25 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI();
 			int result10 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI();

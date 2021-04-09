@@ -41,7 +41,7 @@ import java.util.List;
 public class application {
 
 	public static Locations GlobalLocations;
-	public static AQICalculator aqicalc;
+	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 	public static void main(String[] args) throws Exception {
 
@@ -50,8 +50,6 @@ public class application {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		env.setParallelism(1);
-
-		aqicalc = AQICalculator.getAQICalculatorInstance();
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
 														.name("API")

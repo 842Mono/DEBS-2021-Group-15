@@ -48,12 +48,12 @@ public class application {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.setParallelism(16); // use 1 processing tasks
+		env.setParallelism(16);
 
 		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
-														.name("Source operator")
+														.name("API")
 														.broadcast();
 
 //		measurements.print();

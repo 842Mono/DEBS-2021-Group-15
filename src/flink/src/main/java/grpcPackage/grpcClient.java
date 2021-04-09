@@ -8,11 +8,14 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.ManagedChannel;
 
 import com.grpc.ChallengerGrpc.ChallengerBlockingStub;
+import org.apache.flink.quickstart.Team8Measurement;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 
-public class grpcClient extends RichSourceFunction<Measurement> { //<Data> {
+import org.apache.flink.quickstart.application;
 
-    public void run(SourceContext<Measurement> ctx){ //<Data> ctx) {
+public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> {
+
+    public void run(SourceContext<Team8Measurement> ctx){ //<Data> ctx) {
 
         ManagedChannel channel = ManagedChannelBuilder.forAddress("challenge.msrg.in.tum.de", 5023).usePlaintext().build();
 
@@ -37,8 +40,10 @@ public class grpcClient extends RichSourceFunction<Measurement> { //<Data> {
 
         // Get locations
         System.out.println("Getting location data...");
-        Locations locations = client.getLocations(benchmark);
+        application.GlobalLocations = client.getLocations(benchmark);
         System.out.println("Location recieved!");
+
+
 
         // Start latency measuring
         System.out.println("Started latency adjustments");
@@ -64,11 +69,11 @@ public class grpcClient extends RichSourceFunction<Measurement> { //<Data> {
             List<Measurement> lastYearMeasurements = batch.getLastyearList();
 
             for(int i = 0; i < currentYearMeasurements.size(); ++i) {
-                ctx.collect(currentYearMeasurements.get(i));
+                ctx.collect(new Team8Measurement(currentYearMeasurements.get(i), "ThisYear"));
             }
             for(int i = 0; i < lastYearMeasurements.size(); ++i)
             {
-                ctx.collect(lastYearMeasurements.get(i));
+                ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear"));
             }
 
 

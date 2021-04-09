@@ -18,7 +18,7 @@
 
 package org.apache.flink.quickstart;
 
-import com.grpc.Measurement;
+import com.grpc.*;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple4;
@@ -30,10 +30,15 @@ import grpcPackage.grpcClient;
 import com.thanglequoc.aqicalculator.AQICalculator;
 import com.thanglequoc.aqicalculator.AQIResult;
 import com.thanglequoc.aqicalculator.Pollutant;
+
+import java.util.List;
+
 /**
  * A simple Flink program that processes the Wikipedia edits stream.
  **/
 public class application {
+
+	public static Locations GlobalLocations;
 
 	public static void main(String[] args) throws Exception {
 
@@ -43,12 +48,16 @@ public class application {
 
 		env.setParallelism(1); // use 1 processing tasks
 
-		DataStream<Measurement> measurements = env.addSource(new grpcClient());
+		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient());
 
-		measurements.print();
+//		measurements.print();
+
+		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity());
+
+		calculateCity.print();
 
 		// Testing to see if I can connect operators
-		measurements.shuffle();
+//		calculateCity.shuffle();
 
 		env.execute("Print Measurements Stream");
 
@@ -56,7 +65,7 @@ public class application {
 		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 		AQIResult result = aqicalc.getAQI(Pollutant.PM10, 50);
 		AQIResult result2 = aqicalc.getAQI(Pollutant.PM25, 50);
-		
+
 		System.out.println("Calculated AQI results");
 		System.out.println(result.getAQI());
 		System.out.println(result2.getAQI());
@@ -79,6 +88,60 @@ public class application {
 
 //		grpcClient.FakeMain();
 	}
+
+
+	private static class MapGetCity implements MapFunction<Team8Measurement,Team8Measurement> {
+		@Override
+		public Team8Measurement map(Team8Measurement m) throws Exception {
+			m.city = calculateCity(m);
+			return m;
+		}
+
+		private String calculateCity(Team8Measurement m) {
+			List<Location> locationsal = GlobalLocations.getLocationsList();
+			for(int i = 0; i < locationsal.size(); ++i)
+			{
+				if(isInside(locationsal.get(i).getPolygonsList(), m.measurement.getLatitude(), m.measurement.getLongitude())) {
+//					System.out.println(locationsal.get(i).getCity());
+					return locationsal.get(i).getCity();
+				}
+			}
+			System.out.println("TEAM8 ERROR POINT WASN'T FOUND TO BE IN ANY OF THE POLYGONS.");
+			return "CITYERROR";
+		}
+
+		// Code retrieved from the web and adapted from js to java.
+		// Ray casting.
+		private boolean isInside(List<Polygon> polygonList, double latitude, double longitude) {
+			for(int k = 0; k < polygonList.size(); ++k)
+			{
+				Polygon polygon = polygonList.get(k);
+				List<Point> vs = polygon.getPointsList();
+
+				// Beginning of external code
+				double y = latitude, x = longitude;
+
+
+				var inside = false;
+				for (int i = 0, j = vs.size() - 1; i < vs.size(); j = i++) {
+					double xi = vs.get(i).getLongitude(), yi = vs.get(i).getLatitude();
+					double xj = vs.get(j).getLongitude(), yj = vs.get(j).getLatitude();
+
+					var intersect = ((yi > y) != (yj > y))
+							&& (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+					if (intersect) inside = !inside;
+				}
+
+				if(inside)
+					return true;
+				// End of external code
+
+			}
+			return false;
+		}
+	}
+
+
 
 
 }

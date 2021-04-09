@@ -52,18 +52,26 @@ public class application {
 
 		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
-		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient()).broadcast();
+		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
+														.name("Source operator")
+														.broadcast();
 
 //		measurements.print();
 		// Set particular parallelism
-		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity()).setParallelism(4).rebalance();
+		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity())
+																	.setParallelism(4)
+																	.name("calculateCity")
+																	.rebalance();
 
 		// Branches out a different operator, (since query 1 and 2 need to recieve data from the same data stream)
 		//DataStream<Team8Measurement> calculateCityFilter = measurements.filter();
 
 //		calculateCity.print();
 		// Different parallelism splits
-		DataStream<Team8Measurement> filterNoCity = calculateCity.filter(m -> !m.city.equals("CITYERROR")).setParallelism(8).rescale();
+		DataStream<Team8Measurement> filterNoCity = calculateCity.filter(m -> !m.city.equals("CITYERROR"))
+																	.name("filterNoCity")
+																	.setParallelism(8)
+																	.rescale();
 
 //		filterNoCity.print();
 

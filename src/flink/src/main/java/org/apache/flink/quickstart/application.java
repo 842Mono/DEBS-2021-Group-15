@@ -61,6 +61,7 @@ public class application {
 		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity())
 																	.setParallelism(1)
 																	.name("calculateCity")
+																	.filter(m -> !m.city.equals("CITYERROR"))
 																	.rebalance();
 
 		// Branches out a different operator, (since query 1 and 2 need to recieve data from the same data stream)
@@ -68,14 +69,10 @@ public class application {
 
 //		calculateCity.print();
 		// Different parallelism splits
-		DataStream<Team8Measurement> filterNoCity = calculateCity.filter(m -> !m.city.equals("CITYERROR"))
-																	.name("filterNoCity")
-																	.setParallelism(1)
-																	.rescale();
 
 //		filterNoCity.print();
 
-		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = filterNoCity.keyBy(m -> m.city);
+		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCity.keyBy(m -> m.city);
 
 		measurementsKeyedByCity.print();
 

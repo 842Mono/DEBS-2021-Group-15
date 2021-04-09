@@ -23,6 +23,7 @@ import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import grpcPackage.grpcClient;
@@ -46,12 +47,13 @@ public class application {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.setParallelism(1); // use 1 processing tasks
+		env.setParallelism(8); // use 1 processing tasks
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient());
 
 //		measurements.print();
 
+//		SingleOutputStreamOperator<Team8Measurement>
 		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity());
 
 		calculateCity.print();

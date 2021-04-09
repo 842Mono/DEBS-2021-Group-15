@@ -63,8 +63,6 @@ public class application {
 																	.filter(m -> !m.city.equals("CITYERROR"))
 																	.rebalance();
 
-		calculateCityAndAqiAndFilter.print();
-
 		// Branches out a different operator, (since query 1 and 2 need to recieve data from the same data stream)
 		//DataStream<Team8Measurement> calculateCityFilter = measurements.filter();
 

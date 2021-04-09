@@ -71,15 +71,6 @@ public class application {
 
 		env.execute("Print Measurements Stream");
 
-		// Get AQI calculator
-		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
-		AQIResult result = aqicalc.getAQI(Pollutant.PM10, 50);
-		AQIResult result2 = aqicalc.getAQI(Pollutant.PM25, 50);
-
-		System.out.println("Calculated AQI results");
-		System.out.println(result.getAQI());
-		System.out.println(result2.getAQI());
-
 
 		//old code. keeping it for now just for reference.
 
@@ -148,6 +139,25 @@ public class application {
 
 			}
 			return false;
+		}
+
+		private int computeAQI(Measurement measurement) {
+
+			float pm25 = measurement.getP1();
+			float pm10 = measurement.getP2();
+
+			AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
+
+			int result25 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI();
+			int result10 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI();
+
+			if (result10 > result25){
+				return result10;
+			}
+			else {
+				return result25;
+			}
+
 		}
 	}
 

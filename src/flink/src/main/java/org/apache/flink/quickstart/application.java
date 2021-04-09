@@ -41,6 +41,7 @@ import java.util.List;
 public class application {
 
 	public static Locations GlobalLocations;
+	public static AQICalculator aqicalc;
 
 	public static void main(String[] args) throws Exception {
 
@@ -50,7 +51,7 @@ public class application {
 
 		env.setParallelism(1);
 
-		AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
+		aqicalc = AQICalculator.getAQICalculatorInstance();
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
 														.name("API")
@@ -58,11 +59,13 @@ public class application {
 
 //		measurements.print();
 		// Set particular parallelism
-		DataStream<Team8Measurement> calculateCity = measurements.map(new MapGetCity())
+		DataStream<Team8Measurement> calculateCityAndAqiAndFilter = measurements.map(new MapCityAndAqi())
 																	.setParallelism(1)
 																	.name("calculateCity")
 																	.filter(m -> !m.city.equals("CITYERROR"))
 																	.rebalance();
+
+		calculateCityAndAqiAndFilter.print();
 
 		// Branches out a different operator, (since query 1 and 2 need to recieve data from the same data stream)
 		//DataStream<Team8Measurement> calculateCityFilter = measurements.filter();
@@ -72,7 +75,7 @@ public class application {
 
 //		filterNoCity.print();
 
-		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCity.keyBy(m -> m.city);
+		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCityAndAqiAndFilter.keyBy(m -> m.city);
 
 		measurementsKeyedByCity.print();
 
@@ -80,31 +83,15 @@ public class application {
 //		calculateCity.shuffle();
 
 		env.execute("Print Measurements Stream");
-
-
-		//old code. keeping it for now just for reference.
-
-//		DataStream<WikipediaEditEvent> edits = env
-//				.addSource(new WikipediaEditsSource());
-//
-//		// filter events with bytediff < 0
-//		DataStream<WikipediaEditEvent> filtered = edits.filter(new MyFilterFunction());
-//
-//		DataStream<Tuple4<String, Long, Integer, String>> mappedEdits = filtered.map(new MyMapFunction());
-//
-//		mappedEdits.print();
-//
-//		// execute program
-//		env.execute("Print Wikipedia Edits Stream");
-
-//		grpcClient.FakeMain();
 	}
 
 
-	private static class MapGetCity implements MapFunction<Team8Measurement,Team8Measurement> {
+	private static class MapCityAndAqi implements MapFunction<Team8Measurement,Team8Measurement> {
 		@Override
 		public Team8Measurement map(Team8Measurement m) throws Exception {
 			m.city = calculateCity(m);
+			if(!m.city.equals("CITYERROR"))
+				m.aqi = computeAQI(m.measurement, aqicalc);
 			return m;
 		}
 

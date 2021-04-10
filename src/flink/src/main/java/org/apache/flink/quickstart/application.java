@@ -97,7 +97,8 @@ public class application {
 		DataStream<FiveMinuteSnapshot> keyedSnapshots = measurementsKeyedByCity.window(GlobalWindows.create())
 								.trigger(new TriggerFiveMinutes())
 								.evictor(new EvictFiveMinutes())
-								.process(new MeasurementsToSnapshots());
+								.process(new MeasurementsToSnapshots())
+								.name("Query 1");
 
 		keyedSnapshots.print();
 
@@ -194,6 +195,11 @@ public class application {
 			else {
 				return result25;
 			}
+		}
+
+		private Boolean isGoodAQI(Measurement measurement, AQICalculator aqicalc) {
+			int aqi = computeAQI(measurement, aqicalc);
+			return aqi < 50;
 		}
 	}
 

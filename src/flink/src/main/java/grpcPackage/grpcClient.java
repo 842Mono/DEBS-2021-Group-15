@@ -29,7 +29,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
                 .setToken("gppciibyukfkxidslfbdqofvnuzocnww")
                 .setBatchSize(100)
                 .setBenchmarkName("group-15")
-                .setBenchmarkType("test")
+                .setBenchmarkType("evaluation")
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
                 .build();

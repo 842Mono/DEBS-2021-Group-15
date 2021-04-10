@@ -33,7 +33,19 @@ import com.thanglequoc.aqicalculator.AQICalculator;
 import com.thanglequoc.aqicalculator.AQIResult;
 import com.thanglequoc.aqicalculator.Pollutant;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
+import org.apache.flink.streaming.api.windowing.evictors.Evictor;
+//import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger;
+import org.apache.flink.streaming.api.windowing.triggers.Trigger;
+import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.apache.flink.streaming.api.windowing.windows.Window;
+import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue;
 import org.apache.flink.util.Collector;
+
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 import javax.xml.crypto.KeySelector;
 import java.util.List;
@@ -45,6 +57,8 @@ public class application {
 
 	public static Locations GlobalLocations;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
+
+	public static int JustTesting = 0;
 
 	public static void main(String[] args) throws Exception {
 
@@ -78,7 +92,14 @@ public class application {
 
 		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCityAndAqiAndFilter.keyBy(m -> m.city);
 
-		measurementsKeyedByCity.process(new KeyedProcessFunction1());
+//		measurementsKeyedByCity.process(new KeyedProcessFunction1()); //for testing
+
+		DataStream<FiveMinuteSnapshot> keyedSnapshots = measurementsKeyedByCity.window(GlobalWindows.create())
+								.trigger(new TriggerFiveMinutes())
+								.evictor(new EvictFiveMinutes())
+								.process(new MeasurementsToSnapshots());
+
+		keyedSnapshots.print();
 
 //		measurementsKeyedByCity.print();
 
@@ -184,6 +205,87 @@ public class application {
 //			return m;
 //		}
 //	}
+
+
+
+	private static class EvictFiveMinutes implements Evictor<Team8Measurement, GlobalWindow> {
+
+		@Override
+		public void evictBefore(Iterable<TimestampedValue<Team8Measurement>> events, int size, GlobalWindow window, EvictorContext ctx) {}
+
+		@Override
+		public void evictAfter(Iterable<TimestampedValue<Team8Measurement>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
+
+
+
+
+
+//			long firstStop = ConnectedCarEvent.earliestStopElement(elements);
+//
+//			// remove all events up to (and including) the first stop event (which is the event that triggered the window)
+//			for (Iterator<TimestampedValue<ConnectedCarEvent>> iterator = elements.iterator(); iterator.hasNext(); ) {
+//				TimestampedValue<ConnectedCarEvent> element = iterator.next();
+//				if (element.getTimestamp() <= firstStop) {
+//					iterator.remove();
+//				}
+//			}
+		}
+	}
+
+
+
+	private static class TriggerFiveMinutes<W extends Window> extends Trigger<Object, W> {
+
+
+		@Override
+		public TriggerResult onElement(Object element, long timestamp, W window, TriggerContext ctx) throws Exception {
+//			ReducingState<Long> count = ctx.getPartitionedState(stateDesc);
+//			count.add(1L);
+//			if (count.get() >= maxCount) {
+//				count.clear();
+//				return TriggerResult.FIRE_AND_PURGE;
+//			}
+
+			if(application.JustTesting++ % 100 == 0)
+				return TriggerResult.FIRE;
+			return TriggerResult.CONTINUE;
+		}
+
+
+		@Override
+		public TriggerResult onProcessingTime(long time, W window, TriggerContext ctx) throws Exception {
+//			return TriggerResult.FIRE_AND_PURGE;
+			return TriggerResult.CONTINUE;
+		}
+
+		@Override
+		public TriggerResult onEventTime(long time, W window, TriggerContext ctx) {
+			return TriggerResult.CONTINUE;
+		}
+
+		@Override
+		public void clear(W window, TriggerContext ctx) throws Exception {
+//			ctx.getPartitionedState(stateDesc).clear();
+		}
+	}
+
+
+	private static class MeasurementsToSnapshots extends ProcessWindowFunction<Team8Measurement, FiveMinuteSnapshot, String, TimeWindow> {
+
+		@Override
+		public void process(String key, Context context, Iterable<Team8Measurement> input, Collector<FiveMinuteSnapshot> out) {
+
+//			long count = 0;
+			int avgAqip1 = 0;
+			int avgAqip2 = 0;
+			for (Team8Measurement m: input) {
+				avgAqip1 += m.measurement.getP1();
+				avgAqip2 += m.measurement.getP2();
+			}
+			out.collect(new FiveMinuteSnapshot(avgAqip1,avgAqip2));
+//			out.collect("Window: " + context.window() + "count: " + count);
+		}
+	}
 
 }
 

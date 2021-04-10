@@ -32,7 +32,10 @@ import grpcPackage.grpcClient;
 import com.thanglequoc.aqicalculator.AQICalculator;
 import com.thanglequoc.aqicalculator.AQIResult;
 import com.thanglequoc.aqicalculator.Pollutant;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.util.Collector;
 
+import javax.xml.crypto.KeySelector;
 import java.util.List;
 
 /**
@@ -63,7 +66,7 @@ public class application {
 																	.filter(m -> !m.city.equals("CITYERROR"))
 																	.rebalance();
 
-		calculateCityAndAqiAndFilter.print();
+//		calculateCityAndAqiAndFilter.print();
 
 		// Branches out a different operator, (since query 1 and 2 need to recieve data from the same data stream)
 		//DataStream<Team8Measurement> calculateCityFilter = measurements.filter();
@@ -75,7 +78,12 @@ public class application {
 
 		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCityAndAqiAndFilter.keyBy(m -> m.city);
 
-		measurementsKeyedByCity.print();
+		measurementsKeyedByCity.process(new KeyedProcessFunction1());
+
+//		measurementsKeyedByCity.print();
+
+
+//		org.apache.flink.api.java.functions.KeySelector<Team8Measurement, String> mkbcKeySelector = measurementsKeyedByCity.getKeySelector();
 
 		// Testing to see if I can connect operators
 //		calculateCity.shuffle();
@@ -83,6 +91,21 @@ public class application {
 		env.execute("Print Measurements Stream");
 	}
 
+	private static class KeyedProcessFunction1 extends KeyedProcessFunction<String, Team8Measurement, Team8Measurement> {
+
+		@Override
+		public void processElement(Team8Measurement m, Context ctx, Collector<Team8Measurement> out) {
+			if(ctx.getCurrentKey().equals("Essen"))
+			{
+//				System.out.println("-----------------------------------------------");
+//				System.out.println(m);
+//				System.out.println(m.measurement.getTimestamp());
+				java.util.Date time=new java.util.Date((long)m.measurement.getTimestamp().getSeconds()*1000);
+				System.out.println(time);
+//				System.out.println("-----------------------------------------------");
+			}
+		}
+	}
 
 	private static class MapCityAndAqi implements MapFunction<Team8Measurement,Team8Measurement> {
 		@Override
@@ -102,7 +125,7 @@ public class application {
 					return locationsal.get(i).getCity();
 				}
 			}
-			System.out.println("TEAM8 ERROR POINT WASN'T FOUND TO BE IN ANY OF THE POLYGONS.");
+//			System.out.println("TEAM8 ERROR POINT WASN'T FOUND TO BE IN ANY OF THE POLYGONS."); We now know this is not an issue.
 			return "CITYERROR";
 		}
 

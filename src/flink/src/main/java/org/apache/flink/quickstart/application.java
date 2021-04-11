@@ -77,6 +77,7 @@ public class application {
 	public static Locations GlobalLocations;
 	public static long benchId;
 	public static long batchseq;
+	public static Benchmark benchmark;
 	public static ChallengerBlockingStub client;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
@@ -148,6 +149,7 @@ public class application {
 		calculateHistogram(calculateCityAndFilter);
 
 		env.execute("Print Measurements Stream");
+		client.endBenchmark(benchmark);
 	}
 
 	private static class KeyedProcessFunction1 extends KeyedProcessFunction<String, Team8Measurement, Team8Measurement> {

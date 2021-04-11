@@ -77,6 +77,7 @@ public class application {
 	public static Locations GlobalLocations;
 	public static long benchId;
 	public static long batchseq;
+	public static Benchmark benchmark;
 	public static ChallengerBlockingStub client;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 

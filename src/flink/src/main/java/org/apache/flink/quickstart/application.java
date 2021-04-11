@@ -89,19 +89,19 @@ public class application {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		int maxParal = env.getMaxParallelism();
-		env.setParallelism(1);
+		env.setParallelism(maxParal);
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
 														.name("API")
-														.broadcast();
+														.rebalance();
 
 //		measurements.print();
 		// Set particular parallelism
 		DataStream<Team8Measurement> calculateCityAndFilter = measurements.map(new MapCity())
-																	.setParallelism(1)
+																	.setParallelism(4)
 																	.name("calculateCity")
 																	.filter(m -> !m.city.equals("CITYERROR"))
-																	.rebalance();
+																	.broadcast();
 
 //		calculateCityAndAqiAndFilter.print();
 
@@ -131,7 +131,7 @@ public class application {
 								.trigger(new TriggerEveryElement())
 								.evictor(new EvictLastElement())
 								.process(new SnapshotsToImprovement())
-								.name("Query 1 still lol yeah");
+								.name("Query 1 continued");
 
 //		calculateAqi.print();
 
@@ -146,7 +146,7 @@ public class application {
 //		calculateCity.shuffle();
 
 		// query 2 implementation call
-		calculateHistogram(calculateCityAndFilter).print();
+		calculateHistogram(calculateCityAndFilter);
 
 		env.execute("Print Measurements Stream");
 	}
@@ -499,7 +499,10 @@ public class application {
 		public void clear(W window, TriggerContext ctx) throws Exception { }
 	}
 	private static class SnapshotsToImprovement extends ProcessAllWindowFunction<SnapshotDictionary, Object, TimeWindow> {
-
+		// Bug here:
+		// java.lang.ClassCastException: class org.apache.flink.quickstart.SnapshotDictionary 
+		// cannot be cast to class org.apache.flink.quickstart.Team8Measurement 
+		// (org.apache.flink.quickstart.SnapshotDictionary and org.apache.flink.quickstart.Team8Measurement are in unnamed module of loader 
 		@Override
 		public void process(Context context, Iterable<SnapshotDictionary> input, Collector<Object> out) {
 

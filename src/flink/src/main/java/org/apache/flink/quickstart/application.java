@@ -80,8 +80,8 @@ public class application {
 
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-		env.setParallelism(1);
+		int maxParal = env.getMaxParallelism();
+		env.setParallelism(maxParal);
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
 														.name("API")
@@ -451,16 +451,11 @@ public class application {
 						        	result.add(item);
 						        }
 
-								ResultQ2.Builder submitDataBuilder = ResultQ2.newBuilder()
+								ResultQ2 submitData = ResultQ2.newBuilder()
 																.setBenchmarkId(benchId)
-																.setBatchSeqId(batchseq);
-								
-								for (int i = 0; i < result.size(); i++)
-								{
-									submitDataBuilder.setHistogram(i, result.get(i));
-								}
-
-								ResultQ2 submitData = submitDataBuilder.build();
+																.setBatchSeqId(batchseq)
+																.addAllHistogram(result)
+																.build();
 								client.resultQ2(submitData);
 						        out.collect(result);						        
 

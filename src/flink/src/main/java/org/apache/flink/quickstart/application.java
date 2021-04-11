@@ -89,7 +89,7 @@ public class application {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		int maxParal = env.getMaxParallelism();
-		env.setParallelism(maxParal);
+		env.setParallelism(8);
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
 														.name("API")
@@ -100,8 +100,7 @@ public class application {
 		DataStream<Team8Measurement> calculateCityAndFilter = measurements.map(new MapCity())
 																	.setParallelism(4)
 																	.name("calculateCity")
-																	.filter(m -> !m.city.equals("CITYERROR"))
-																	.broadcast();
+																	.filter(m -> !m.city.equals("CITYERROR"));
 
 //		calculateCityAndAqiAndFilter.print();
 
@@ -601,10 +600,10 @@ public class application {
     
 
 		// filter measurements for current year
-		DataStream<Team8Measurement> currentYearData = calculateCity.filter(m -> m.year.equals("ThisYear"));
+		DataStream<Team8Measurement> currentYearData = calculateCity.filter(m -> m.year.equals("ThisYear")).name("Current year filter");
 		
 		// sets attribute isGood of Team8Measurement for each measurement, true if good AQI value, false otherwise																											
-       	DataStream<Team8Measurement> calculateGoodAQIs = currentYearData.map(new MapGoodAQIs());
+       	DataStream<Team8Measurement> calculateGoodAQIs = currentYearData.map(new MapGoodAQIs()).name("Good streak finder");
        	
        	// key by city and calculate streaks of good AQI values for each city						
         DataStream<Tuple4<String, Long, Long, Long>> measurementsKeyedByCity = calculateGoodAQIs

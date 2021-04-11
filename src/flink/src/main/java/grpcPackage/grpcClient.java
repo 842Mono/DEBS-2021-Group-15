@@ -23,6 +23,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         ChallengerBlockingStub client = ChallengerGrpc.newBlockingStub(channel)
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
+        application.client = client;
 
         // Create a configuration object to be passed into the first set of creating a benchmark
         BenchmarkConfiguration benchmarkConfig = BenchmarkConfiguration.newBuilder()
@@ -37,6 +38,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         // Initiate step one and send over the benchmarkConfig
         Benchmark benchmark = client.createNewBenchmark(benchmarkConfig);
         System.out.println("Benchmark ID: " + benchmark.getId());
+        application.benchId = benchmark.getId();
 
         // Get locations
         System.out.println("Getting location data...");
@@ -59,10 +61,9 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         System.out.println("Bechmark Started!");
 
         //Process the events
-        int cnt = 0;
         while(true) {
             Batch batch = client.nextBatch(benchmark);
-
+            application.batchseq = batch.getSeqId();
             List<Measurement> currentYearMeasurements = batch.getCurrentList();
             List<Measurement> lastYearMeasurements = batch.getLastyearList();
 

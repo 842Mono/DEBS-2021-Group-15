@@ -50,6 +50,8 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import javax.xml.crypto.KeySelector;
 import java.util.List;
 
+import com.grpc.ChallengerGrpc.ChallengerBlockingStub;
+
 // added by Snigdha
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.typeinfo.*;
@@ -66,6 +68,9 @@ import java.util.*;
 public class application {
 
 	public static Locations GlobalLocations;
+	public static long benchId;
+	public static long batchseq;
+	public static ChallengerBlockingStub client;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 	public static int JustTesting = 0;
@@ -445,7 +450,18 @@ public class application {
 						        				.build();
 						        	result.add(item);
 						        }
- 
+
+								ResultQ2.Builder submitDataBuilder = ResultQ2.newBuilder()
+																.setBenchmarkId(benchId)
+																.setBatchSeqId(batchseq);
+								
+								for (int i = 0; i < result.size(); i++)
+								{
+									submitDataBuilder.setHistogram(i, result.get(i));
+								}
+
+								ResultQ2 submitData = submitDataBuilder.build();
+								client.resultQ2(submitData);
 						        out.collect(result);						        
 
 		                    }

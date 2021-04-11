@@ -15,12 +15,14 @@ import org.apache.flink.quickstart.application;
 
 public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> {
 
+    public static ChallengerBlockingStub client;
+
     public void run(SourceContext<Team8Measurement> ctx){ //<Data> ctx) {
 
         ManagedChannel channel = ManagedChannelBuilder.forAddress("challenge.msrg.in.tum.de", 5023).usePlaintext().build();
 
         // Create a blocking stub because we need to make sure this response is recieved
-        ChallengerBlockingStub client = ChallengerGrpc.newBlockingStub(channel)
+        client = ChallengerGrpc.newBlockingStub(channel)
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
         application.client = client;

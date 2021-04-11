@@ -86,10 +86,10 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         }
     }
 
-    public void endBench() { 
+    public static void endBench() {
         // Pseudo code
         client.endBenchmark(benchmark);
-        break;
+//        break;
     }
 
     public void cancel() { System.out.println("CANCEL CALLED. TODO."); }

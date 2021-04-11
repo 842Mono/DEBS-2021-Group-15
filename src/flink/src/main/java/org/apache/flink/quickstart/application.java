@@ -454,6 +454,8 @@ public class application {
 			out.collect(d);
 //			out.collect(new FiveMinuteSnapshot(avgAqip1,avgAqip2, ));
 //			out.collect("Window: " + context.window() + "count: " + count);
+
+
 		}
 	}
 

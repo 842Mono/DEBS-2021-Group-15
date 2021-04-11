@@ -81,7 +81,7 @@ public class application {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		int maxParal = env.getMaxParallelism();
-		env.setParallelism(maxParal);
+		env.setParallelism(1);
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
 														.name("API")

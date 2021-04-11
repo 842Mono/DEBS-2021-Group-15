@@ -78,7 +78,6 @@ public class application {
 	public static long benchId;
 	public static long batchseq;
 	public static ChallengerBlockingStub client;
-	public static Boolean finished = false;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 	public static int TimeStampWatermark = 1585699500; // Wed Apr 01 2020 00:05:00 GMT+0000
@@ -149,8 +148,6 @@ public class application {
 		calculateHistogram(calculateCityAndFilter);
 
 		env.execute("Print Measurements Stream");
-
-		finished = true;
 	}
 
 	private static class KeyedProcessFunction1 extends KeyedProcessFunction<String, Team8Measurement, Team8Measurement> {

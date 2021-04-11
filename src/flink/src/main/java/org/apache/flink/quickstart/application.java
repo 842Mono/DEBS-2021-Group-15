@@ -468,10 +468,14 @@ public class application {
 		@Override
 		public void evictAfter(Iterable<TimestampedValue<SnapshotDictionary>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
 
+			int count = 0;
 			for (Iterator<TimestampedValue<SnapshotDictionary>> iterator = elements.iterator(); iterator.hasNext(); ) {
-				TimestampedValue<SnapshotDictionary> element = iterator.next();
-				if(!iterator.hasNext())
+
+//				TimestampedValue<SnapshotDictionary> element = iterator.next();
+//				if(!iterator.hasNext())
+				if(count > 1440)
 					iterator.remove();
+				++count;
 			}
 		}
 	}
@@ -537,12 +541,9 @@ public class application {
 												.setCurrentAQIP1(isp.currentAqiP1)
 												.setCurrentAQIP2(isp.currentAqiP2)
 												.build();
-				//Todo: complete.
-				//This should be everything we need:
-				// (i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)
-				//We just need to pass them somewhere correctly
-				//Below is my attempt, but it doesn't compile
+
 				topkresult.add(curCity);
+
 //				client.resultQ1(new ResultQ1(benchId, batchseq, new TopKCities(i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)));
 			}
 

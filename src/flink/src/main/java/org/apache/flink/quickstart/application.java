@@ -460,25 +460,25 @@ public class application {
 	//////////////////////////////////////////////////////END FIRST CUSTOM WINDOW//////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////BEGIN SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
 
-	private static class EvictLastElement implements Evictor<Team8Measurement, GlobalWindow> {
+	private static class EvictLastElement implements Evictor<SnapshotDictionary, GlobalWindow> {
 
 		@Override
-		public void evictBefore(Iterable<TimestampedValue<Team8Measurement>> events, int size, GlobalWindow window, EvictorContext ctx) {}
+		public void evictBefore(Iterable<TimestampedValue<SnapshotDictionary>> events, int size, GlobalWindow window, EvictorContext ctx) {}
 
 		@Override
-		public void evictAfter(Iterable<TimestampedValue<Team8Measurement>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
+		public void evictAfter(Iterable<TimestampedValue<SnapshotDictionary>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
 
-			for (Iterator<TimestampedValue<Team8Measurement>> iterator = elements.iterator(); iterator.hasNext(); ) {
-				TimestampedValue<Team8Measurement> element = iterator.next();
+			for (Iterator<TimestampedValue<SnapshotDictionary>> iterator = elements.iterator(); iterator.hasNext(); ) {
+				TimestampedValue<SnapshotDictionary> element = iterator.next();
 				if(!iterator.hasNext())
 					iterator.remove();
 			}
 		}
 	}
-	private static class TriggerEveryElement<W extends Window> extends Trigger<Team8Measurement, W> {
+	private static class TriggerEveryElement<W extends Window> extends Trigger<SnapshotDictionary, W> {
 
 		@Override
-		public TriggerResult onElement(Team8Measurement element, long timestamp, W window, TriggerContext ctx) throws Exception {
+		public TriggerResult onElement(SnapshotDictionary element, long timestamp, W window, TriggerContext ctx) throws Exception {
 
 			return TriggerResult.FIRE;
 

@@ -471,7 +471,7 @@ public class application {
 			int count = 0;
 			for (Iterator<TimestampedValue<SnapshotDictionary>> iterator = elements.iterator(); iterator.hasNext(); ) {
 
-//				TimestampedValue<SnapshotDictionary> element = iterator.next();
+				TimestampedValue<SnapshotDictionary> element = iterator.next();
 //				if(!iterator.hasNext())
 				if(count > 1440)
 					iterator.remove();

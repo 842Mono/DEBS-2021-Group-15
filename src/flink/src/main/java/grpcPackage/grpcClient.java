@@ -27,7 +27,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         // Create a configuration object to be passed into the first set of creating a benchmark
         BenchmarkConfiguration benchmarkConfig = BenchmarkConfiguration.newBuilder()
                 .setToken("gppciibyukfkxidslfbdqofvnuzocnww")
-                .setBatchSize(100)
+                .setBatchSize(10000)
                 .setBenchmarkName("group-15")
                 .setBenchmarkType("evaluation")
                 .addQueries(BenchmarkConfiguration.Query.Q1)

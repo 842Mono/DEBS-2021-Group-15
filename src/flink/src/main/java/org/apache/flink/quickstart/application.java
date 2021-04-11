@@ -531,11 +531,18 @@ public class application {
 			List<ImprovementScratchpad> sortedImprovements = new ArrayList<ImprovementScratchpad>(scratch.values());
 			Collections.sort(sortedImprovements, Collections.reverseOrder());
 			List<TopKCities> topkresult = new ArrayList<TopKCities>();
-			for (int i = 0; i < sortedImprovements.size(); i++)
+			int iterations;
+			if (sortedImprovements.size() < 50) {
+				iterations = sortedImprovements.size();
+			}
+			else {
+				iterations = 50;
+			}
+			for (int i = 0; i < iterations; i++)
 			{
 				ImprovementScratchpad isp = sortedImprovements.get(i);
 				TopKCities curCity = TopKCities.newBuilder()
-												.setPosition(i)
+												.setPosition(i+1)
 												.setCity(isp.city)
 												.setAverageAQIImprovement(isp.getImprovement())
 												.setCurrentAQIP1(isp.currentAqiP1)

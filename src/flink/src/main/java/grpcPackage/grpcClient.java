@@ -77,6 +77,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
 
             if (batch.getLast()) { //Stop when we get the last batch
                 System.out.println("Received lastbatch, finished!");
+                client.endBenchmark(benchmark);
                 break;
             }
         }

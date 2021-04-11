@@ -27,9 +27,11 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         // Create a configuration object to be passed into the first set of creating a benchmark
         BenchmarkConfiguration benchmarkConfig = BenchmarkConfiguration.newBuilder()
                 .setToken("gppciibyukfkxidslfbdqofvnuzocnww")
-                .setBatchSize(100)
+//                .setBatchSize(100)
+//                .setBatchSize(20000)
+                .setBatchSize(10000)
                 .setBenchmarkName("group-15")
-                .setBenchmarkType("test")
+                .setBenchmarkType("evaluation")
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
                 .build();
@@ -67,11 +69,11 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
             List<Measurement> lastYearMeasurements = batch.getLastyearList();
 
             for(int i = 0; i < currentYearMeasurements.size(); ++i) {
-                ctx.collect(new Team8Measurement(currentYearMeasurements.get(i), "ThisYear"));
+                ctx.collect(new Team8Measurement(currentYearMeasurements.get(i), "ThisYear", i == currentYearMeasurements.size() - 1));
             }
             for(int i = 0; i < lastYearMeasurements.size(); ++i)
             {
-                ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear"));
+                ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1));
             }
 
             if (batch.getLast()) { //Stop when we get the last batch

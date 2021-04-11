@@ -33,6 +33,7 @@ import com.thanglequoc.aqicalculator.AQICalculator;
 import com.thanglequoc.aqicalculator.AQIResult;
 import com.thanglequoc.aqicalculator.Pollutant;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
 import org.apache.flink.streaming.api.windowing.evictors.Evictor;
@@ -48,6 +49,11 @@ import org.apache.flink.util.Collector;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import javax.xml.crypto.KeySelector;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneId;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -58,7 +64,8 @@ public class application {
 	public static Locations GlobalLocations;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
-	public static int JustTesting = 0;
+	public static int TimeStampWatermark = 1585699500; // Wed Apr 01 2020 00:05:00 GMT+0000
+	public static long currentYearLastMeasurementTimestamp = -1, lastYearLastMeasurementTimestamp = -1;
 
 	public static void main(String[] args) throws Exception {
 
@@ -90,16 +97,17 @@ public class application {
 
 //		filterNoCity.print();
 
-		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCityAndAqiAndFilter.keyBy(m -> m.city);
+//		KeyedStream<Team8Measurement, String> measurementsKeyedByCity = calculateCityAndAqiAndFilter.keyBy(m -> m.city);
 
 //		measurementsKeyedByCity.process(new KeyedProcessFunction1()); //for testing
 
-		DataStream<FiveMinuteSnapshot> keyedSnapshots = measurementsKeyedByCity.window(GlobalWindows.create())
+		DataStream<SnapshotDictionary> snapshots = calculateCityAndAqiAndFilter.windowAll(GlobalWindows.create())
 								.trigger(new TriggerFiveMinutes())
 								.evictor(new EvictFiveMinutes())
 								.process(new MeasurementsToSnapshots());
 
-		keyedSnapshots.print();
+		snapshots.print();
+
 
 //		measurementsKeyedByCity.print();
 
@@ -217,8 +225,17 @@ public class application {
 		public void evictAfter(Iterable<TimestampedValue<Team8Measurement>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
 
 
+			for (Iterator<TimestampedValue<Team8Measurement>> iterator = elements.iterator(); iterator.hasNext(); ) {
+				TimestampedValue<Team8Measurement> element = iterator.next();
+				long timeLastYear = TimeStampWatermark - 31536000;
 
-
+				long elementTime = element.getValue().measurement.getTimestamp().getSeconds();
+				if( (elementTime <= (TimeStampWatermark - 86400) && elementTime > TimeStampWatermark - 31536000/2) || elementTime <= (timeLastYear - 86400)) // first <= should be just <?
+				{
+					System.out.println("Dropping : " + new java.util.Date(elementTime*1000));
+					iterator.remove();
+				}
+			}
 
 //			long firstStop = ConnectedCarEvent.earliestStopElement(elements);
 //
@@ -234,11 +251,16 @@ public class application {
 
 
 
-	private static class TriggerFiveMinutes<W extends Window> extends Trigger<Object, W> {
+	private static class TriggerFiveMinutes<W extends Window> extends Trigger<Team8Measurement, W> {
 
+		public static LocalDate convertToLocalDateViaMilisecond(java.util.Date dateToConvert) {
+			return Instant.ofEpochMilli(dateToConvert.getTime())
+					.atZone(ZoneId.systemDefault())
+					.toLocalDate();
+		}
 
 		@Override
-		public TriggerResult onElement(Object element, long timestamp, W window, TriggerContext ctx) throws Exception {
+		public TriggerResult onElement(Team8Measurement element, long timestamp, W window, TriggerContext ctx) throws Exception {
 //			ReducingState<Long> count = ctx.getPartitionedState(stateDesc);
 //			count.add(1L);
 //			if (count.get() >= maxCount) {
@@ -246,9 +268,44 @@ public class application {
 //				return TriggerResult.FIRE_AND_PURGE;
 //			}
 
-			if(application.JustTesting++ % 100 == 0)
-				return TriggerResult.FIRE;
+
+
+//			System.out.println(element.measurement.getTimestamp().getSeconds());
+			java.util.Date time=new java.util.Date((long)element.measurement.getTimestamp().getSeconds()*1000);
+			System.out.println(time);
+
+			long elementTime = element.measurement.getTimestamp().getSeconds();
+			if(element.isLastMeasurementInBatch && element.year.equals("ThisYear"))
+				currentYearLastMeasurementTimestamp = elementTime;
+			if(element.isLastMeasurementInBatch && element.year.equals("LastYear"))
+				lastYearLastMeasurementTimestamp = elementTime;
+			if(currentYearLastMeasurementTimestamp != -1 && lastYearLastMeasurementTimestamp != -1)
+			{
+				long copyCYLMTS = currentYearLastMeasurementTimestamp;
+				currentYearLastMeasurementTimestamp = -1;
+				lastYearLastMeasurementTimestamp = -1;
+				if(copyCYLMTS >= TimeStampWatermark)
+					return TriggerResult.FIRE;
+			}
 			return TriggerResult.CONTINUE;
+
+
+
+//			if(element.isLastMeasurementInBatch)
+//			{
+//				if(element.year.equals("ThisYear"))
+//					currentYearLastMeasurementTimestamp = element.measurement.getTimestamp().getSeconds();
+//				else // should always be last year
+//					lastYearLastMeasurementTimestamp = element.measurement.getTimestamp().getSeconds();
+//				if(currentYearLastMeasurementTimestamp != -1 && lastYearLastMeasurementTimestamp != -1)
+//				{
+//					if(currentYearLastMeasurementTimestamp >= TimeStampWatermark)
+//					{
+//
+//					}
+//				}
+//			}
+//			return TriggerResult.CONTINUE;
 		}
 
 
@@ -265,24 +322,68 @@ public class application {
 
 		@Override
 		public void clear(W window, TriggerContext ctx) throws Exception {
+//			the clear() method performs any action needed upon removal of the corresponding window.
+
 //			ctx.getPartitionedState(stateDesc).clear();
 		}
 	}
 
 
-	private static class MeasurementsToSnapshots extends ProcessWindowFunction<Team8Measurement, FiveMinuteSnapshot, String, TimeWindow> {
+	private static class MeasurementsToSnapshots extends ProcessAllWindowFunction<Team8Measurement, SnapshotDictionary, TimeWindow> { //String (third one)
 
-		@Override
-		public void process(String key, Context context, Iterable<Team8Measurement> input, Collector<FiveMinuteSnapshot> out) {
+		@Override //String key,
+		public void process(Context context, Iterable<Team8Measurement> input, Collector<SnapshotDictionary> out) {
 
-//			long count = 0;
-			int avgAqip1 = 0;
-			int avgAqip2 = 0;
+			//for testing
+			long minTimestampTY = 158569950000L, maxTimestampTY = 0, minTimestampLY = 158569950000L, maxTimestampLY = 0 ;
+
+			SnapshotDictionary d = new SnapshotDictionary(TimeStampWatermark);
+
+
+			long timeLastYear = TimeStampWatermark - 31536000;
 			for (Team8Measurement m: input) {
-				avgAqip1 += m.measurement.getP1();
-				avgAqip2 += m.measurement.getP2();
+				long msec = m.measurement.getTimestamp().getSeconds();
+
+				if(!d.dict.containsKey(m.city))
+					d.dict.put(m.city, new FiveMinuteSnapshot());
+				if(m.year.equals("ThisYear") && msec <= TimeStampWatermark) // <= or <?
+				{
+					//for testing
+					if(msec < minTimestampTY)
+						minTimestampTY = msec;
+					if(msec > maxTimestampTY)
+						maxTimestampTY = msec;
+
+					d.dict.get(m.city).sumAQIp1ThisYear += m.measurement.getP1();
+					d.dict.get(m.city).sumAQIp2ThisYear  += m.measurement.getP2();
+					d.dict.get(m.city).countForAverageThisYear += 1;
+				}
+				else if(m.year.equals("LastYear") && msec <= timeLastYear)
+				{
+					//for testing
+					if(msec < minTimestampLY)
+						minTimestampLY = msec;
+					if(msec > maxTimestampLY)
+						maxTimestampLY = msec;
+
+					d.dict.get(m.city).sumAQIp1LastYear += m.measurement.getP1();
+					d.dict.get(m.city).sumAQIp2LastYear  += m.measurement.getP2();
+					d.dict.get(m.city).countForAverageLastYear += 1;
+				}
 			}
-			out.collect(new FiveMinuteSnapshot(avgAqip1,avgAqip2));
+
+			System.out.println(d);
+			java.util.Date time1=new java.util.Date(minTimestampTY*1000);
+			System.out.println("mints TY: " + time1);
+			java.util.Date time2=new java.util.Date(maxTimestampTY*1000);
+			System.out.println("maxts TY: " +time2);
+			java.util.Date time3=new java.util.Date(minTimestampLY*1000);
+			System.out.println("mints LY: " + time3);
+			java.util.Date time4=new java.util.Date(maxTimestampLY*1000);
+			System.out.println("maxts LY: " +time4);
+			TimeStampWatermark += 300;
+			out.collect(d);
+//			out.collect(new FiveMinuteSnapshot(avgAqip1,avgAqip2, ));
 //			out.collect("Window: " + context.window() + "count: " + count);
 		}
 	}

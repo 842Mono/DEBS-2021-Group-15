@@ -90,8 +90,8 @@ public class application {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		int maxParal = env.getMaxParallelism();
 		env.setParallelism(8);
-
-		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
+		grpcClient grpc = new grpcClient();
+		DataStream<Team8Measurement> measurements = env.addSource(grpc)
 														.name("API")
 														.rebalance();
 
@@ -148,6 +148,7 @@ public class application {
 		calculateHistogram(calculateCityAndFilter);
 
 		env.execute("Print Measurements Stream");
+		grpc.endBench();
 	}
 
 	private static class KeyedProcessFunction1 extends KeyedProcessFunction<String, Team8Measurement, Team8Measurement> {
@@ -159,7 +160,7 @@ public class application {
 //				System.out.println("-----------------------------------------------");
 //				System.out.println(m);
 //				System.out.println(m.measurement.getTimestamp());
-				java.util.Date time=new java.util.Date((long)m.measurement.getTimestamp().getSeconds()*1000);
+//				java.util.Date time=new java.util.Date((long)m.measurement.getTimestamp().getSeconds()*1000);
 //				System.out.println(time);
 //				System.out.println("-----------------------------------------------");
 			}

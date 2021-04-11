@@ -16,6 +16,7 @@ import org.apache.flink.quickstart.application;
 public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> {
 
     public static ChallengerBlockingStub client;
+    public static Benchmark benchmark;
 
     public void run(SourceContext<Team8Measurement> ctx){ //<Data> ctx) {
 
@@ -40,7 +41,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
                 .build();
 
         // Initiate step one and send over the benchmarkConfig
-        Benchmark benchmark = client.createNewBenchmark(benchmarkConfig);
+        benchmark = client.createNewBenchmark(benchmarkConfig);
         System.out.println("Benchmark ID: " + benchmark.getId());
         application.benchId = benchmark.getId();
 

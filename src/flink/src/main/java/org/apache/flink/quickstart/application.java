@@ -148,7 +148,7 @@ public class application {
 		calculateHistogram(calculateCityAndFilter);
 
 		env.execute("Print Measurements Stream");
-		grpc.endBench();
+		grpcClient.endBench();
 	}
 
 	private static class KeyedProcessFunction1 extends KeyedProcessFunction<String, Team8Measurement, Team8Measurement> {

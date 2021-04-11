@@ -524,19 +524,33 @@ public class application {
 
 			List<ImprovementScratchpad> sortedImprovements = new ArrayList<ImprovementScratchpad>(scratch.values());
 			Collections.sort(sortedImprovements, Collections.reverseOrder());
-
+			List<TopKCities> topkresult = new ArrayList<TopKCities>();
 			for (int i = 0; i < sortedImprovements.size(); i++)
 			{
 				ImprovementScratchpad isp = sortedImprovements.get(i);
-
+				TopKCities curCity = TopKCities.newBuilder()
+												.setPosition(i)
+												.setCity(isp.city)
+												.setAverageAQIImprovement(isp.getImprovement())
+												.setCurrentAQIP1(isp.currentAqiP1)
+												.setCurrentAQIP2(isp.currentAqiP2)
+												.build();
 				//Todo: complete.
 				//This should be everything we need:
 				// (i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)
 				//We just need to pass them somewhere correctly
 				//Below is my attempt, but it doesn't compile
-				
+				topkresult.add(curCity);
 //				client.resultQ1(new ResultQ1(benchId, batchseq, new TopKCities(i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)));
 			}
+
+			ResultQ1 submitData = ResultQ1.newBuilder()
+											.setBenchmarkId(benchId)
+											.setBatchSeqId(batchseq)
+											.addAllTopkimproved(topkresult)
+											.build();
+			
+			client.resultQ1(submitData);
 
 			out.collect(null);
 		}

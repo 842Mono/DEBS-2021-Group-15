@@ -49,9 +49,7 @@ public class grpcClient {
         System.out.println("Started latency adjustments");
         Ping ping = client.initializeLatencyMeasuring(benchmark);
         for (int i = 0; i < 10; i++){
-            System.out.println("Ping...");
             client.measure(ping);
-            System.out.println("Pong!");
         }
         client.endMeasurement(ping);
         System.out.println("Finished lantency adjustments");
@@ -65,7 +63,9 @@ public class grpcClient {
         while(true) {
             Batch batch = client.nextBatch(benchmark);
             System.out.println("Processing batch #" + cnt);
+            System.out.println("This year list");
             System.out.println(batch.getCurrentList());
+            System.out.println("Last year list");
             System.out.println(batch.getLastyearList());
             if (batch.getLast()) { //Stop when we get the last batch
                 System.out.println("Received lastbatch, finished!");
@@ -95,7 +95,7 @@ public class grpcClient {
             System.out.println("Processed batch #" + cnt);
             ++cnt;
 
-            if(cnt > 100) {
+            if(cnt > 4) {
                 break;
             }
         }

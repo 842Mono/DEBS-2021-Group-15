@@ -56,12 +56,27 @@ import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.List;
 
+import com.grpc.ChallengerGrpc.ChallengerBlockingStub;
+
+// added by Snigdha
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.typeinfo.*;
+import org.apache.flink.api.java.tuple.*;
+import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.EventTimeSessionWindows;
+import org.apache.flink.api.common.state.*;
+import org.apache.flink.configuration.*;
+import java.util.*;
+
 /**
  * A simple Flink program that processes the Wikipedia edits stream.
  **/
 public class application {
 
 	public static Locations GlobalLocations;
+	public static long benchId;
+	public static long batchseq;
+	public static ChallengerBlockingStub client;
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 	public static int TimeStampWatermark = 1585699500; // Wed Apr 01 2020 00:05:00 GMT+0000
@@ -72,7 +87,7 @@ public class application {
 
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
+		int maxParal = env.getMaxParallelism();
 		env.setParallelism(1);
 
 		DataStream<Team8Measurement> measurements = env.addSource(new grpcClient())
@@ -104,7 +119,8 @@ public class application {
 		DataStream<SnapshotDictionary> snapshots = calculateCityAndAqiAndFilter.windowAll(GlobalWindows.create())
 								.trigger(new TriggerFiveMinutes())
 								.evictor(new EvictFiveMinutes())
-								.process(new MeasurementsToSnapshots());
+								.process(new MeasurementsToSnapshots())
+								.name("Query 1");
 
 		snapshots.print();
 
@@ -116,6 +132,9 @@ public class application {
 
 		// Testing to see if I can connect operators
 //		calculateCity.shuffle();
+
+		// query 2 implementation call
+		calculateHistogram(calculateCityAndAqiAndFilter).print();
 
 		env.execute("Print Measurements Stream");
 	}
@@ -202,6 +221,11 @@ public class application {
 			else {
 				return result25;
 			}
+		}
+
+		private Boolean isGoodAQI(Measurement measurement, AQICalculator aqicalc) {
+			int aqi = computeAQI(measurement, aqicalc);
+			return aqi < 50;
 		}
 	}
 
@@ -387,6 +411,165 @@ public class application {
 //			out.collect("Window: " + context.window() + "count: " + count);
 		}
 	}
+
+	// Snigdha
+
+	private static DataStream<List<TopKStreaks>> calculateHistogram(DataStream<Team8Measurement>  calculateCity) throws Exception {
+    
+    
+
+		// filter measurements for current year
+		DataStream<Team8Measurement> currentYearData = calculateCity.filter(m -> m.year.equals("ThisYear"));
+		
+		// sets attribute isGood of Team8Measurement for each measurement, true if good AQI value, false otherwise																											
+       	DataStream<Team8Measurement> calculateGoodAQIs = currentYearData.map(new MapGoodAQIs());
+       	
+       	// key by city and calculate streaks of good AQI values for each city						
+        DataStream<Tuple4<String, Long, Long, Long>> measurementsKeyedByCity = calculateGoodAQIs
+			.keyBy(m -> m.city)
+			.window(EventTimeSessionWindows.withGap(Time.minutes(10)))
+			.process(new ProcessWindowFunction<Team8Measurement, Tuple4<String, Long, Long, Long>, String, TimeWindow>() {
+                    
+					private transient ValueState<Tuple2<Long, Long>> streak;
+
+                    @Override
+                    public void process(String key, Context c, Iterable<Team8Measurement> elements, 
+                    							Collector<Tuple4<String, Long, Long, Long>> out) throws Exception {
+                        
+                        //first value is for start time of the streak. second value is for duration of the streak
+				        Tuple2<Long, Long> currentStreak = streak.value();
+
+				        //lastTimeStamp and firstTimeStamp needed for bucket lengths later on
+				        long lastTimeStamp = 0L;
+				        long firstTimeStamp = 0L;
+                        
+						for (Team8Measurement m : elements) {
+							
+							if (m.isGood) {
+								if (currentStreak.f0 == 0) {
+				              	  currentStreak.f0 = m.timestamp;
+				            	}
+				            	// revieved a good aqi value so update the duration 
+				            	currentStreak.f1 = m.timestamp - currentStreak.f0;
+				            }
+							else {
+								// we recieve a bad AQI value so reset start time and duration
+								currentStreak.f0 = 0L;
+				            	currentStreak.f1 = 0L;
+							}
+
+							lastTimeStamp = m.timestamp;
+							if (firstTimeStamp == 0)
+								firstTimeStamp = m.timestamp;
+								
+						}
+                        // update the state
+				        streak.update(currentStreak);
+
+				        System.out.println("Last time " + lastTimeStamp );
+
+                        if (currentStreak.f1 != 0) {
+
+				                out.collect(new Tuple4<>(key, currentStreak.f1, firstTimeStamp, lastTimeStamp));
+				                // streak.clear();
+				        }
+
+                    }
+
+
+                    @Override
+				    public void open(Configuration config) {
+				        ValueStateDescriptor<Tuple2<Long, Long>> descriptor =
+				                new ValueStateDescriptor<>(
+				                        "streaks", // the state name
+				                        TypeInformation.of(new TypeHint<Tuple2<Long, Long>>() {}), // type information
+				                        Tuple2.of(0L, 0L)); // default value of the state, if nothing was set
+				        streak = getRuntimeContext().getState(descriptor);
+				    }
+
+                });
+
+			// assign cities to buckets based on streak length and output list of TopKStreaks
+			DataStream<List<TopKStreaks>> results = 
+					measurementsKeyedByCity
+					.timeWindowAll(Time.minutes(10))
+					.apply(new AllWindowFunction<Tuple4<String, Long, Long, Long>, 
+									List<TopKStreaks>, TimeWindow>() {
+
+						@Override
+		                    public void apply(TimeWindow window, 
+		                    				Iterable<Tuple4<String, Long, Long, Long>> elements, 
+		                    				Collector<List<TopKStreaks>> out) throws Exception {
+
+		                    	List<TopKStreaks> result = new ArrayList<TopKStreaks>();
+						        int numBuckets = 14;
+						        int maxSpan = 0;
+						        int bucketWidth = 0;
+
+						        int totalCities = 0;
+						        long minTimestamp = Long.MAX_VALUE;
+						        long maxTimestamp = 0L;
+
+						        // first loop for getting the earliest and last timestamp of the batch and total cities
+						        for (Tuple4<String, Long, Long, Long> m : elements) {
+
+						        	if (m.f2 < minTimestamp)
+						        		minTimestamp = m.f2;
+						        	if (m.f3 > maxTimestamp)
+						        		maxTimestamp = m.f3;
+						        	totalCities++;
+
+						        }
+
+						        //get size of each bucket
+						        maxSpan = (int)(maxTimestamp - minTimestamp);
+						        bucketWidth = maxSpan / numBuckets;
+						        if (bucketWidth * numBuckets < maxSpan) {
+						        	bucketWidth++;
+						        }
+
+						        // System.out.println("MaxSpan " + maxSpan + " BucketWidth " + bucketWidth);
+
+						        //array to keep track of number of cities belonging to each bucket
+						        int[] counts = new int[numBuckets];
+
+						        for (Tuple4<String, Long, Long, Long> m : elements) {
+						        	// calculate which bucket this city belongs in
+						        	int bucket = (int)(m.f1 / bucketWidth);
+						        	counts[bucket]++;
+						        }
+
+						        //for each bucket, calculate percentage of cities in it and create a TopKStreaks object
+						        for (int i = 0; i < counts.length; i++) {
+						        	counts[i] = counts[i] * 100 * 1000 / totalCities;
+						        	int bucket_from = (int) (i*bucketWidth);
+						        	int bucket_to   = (int) (bucket_from + bucketWidth - 1);
+						        	TopKStreaks item = TopKStreaks.newBuilder()
+						        				.setBucketFrom(bucket_from)
+						        				.setBucketTo(bucket_to)
+						        				.setBucketPercent(counts[i])
+						        				.build();
+						        	result.add(item);
+						        }
+
+								ResultQ2 submitData = ResultQ2.newBuilder()
+																.setBenchmarkId(benchId)
+																.setBatchSeqId(batchseq)
+																.addAllHistogram(result)
+																.build();
+								client.resultQ2(submitData);
+						        out.collect(result);						        
+
+		                    }
+		                        
+					});
+
+					return results;
+
+				}
+
+
+	// End calculateHistogram
 
 }
 

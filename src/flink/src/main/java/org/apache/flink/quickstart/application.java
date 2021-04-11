@@ -160,7 +160,7 @@ public class application {
 //				System.out.println(m);
 //				System.out.println(m.measurement.getTimestamp());
 				java.util.Date time=new java.util.Date((long)m.measurement.getTimestamp().getSeconds()*1000);
-				System.out.println(time);
+//				System.out.println(time);
 //				System.out.println("-----------------------------------------------");
 			}
 		}
@@ -554,7 +554,8 @@ public class application {
 											.build();
 			
 			client.resultQ1(submitData);
-
+			System.out.println("Submitted data for batch: " + batchseq);
+			System.out.println(submitData.toString());
 			out.collect(null);
 		}
 	}

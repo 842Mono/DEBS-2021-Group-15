@@ -257,10 +257,10 @@ public class application {
 
 			for (FiveMinuteSnapshot fms : m.dict.values())
 			{
-				Tuple2<Integer,Integer> t1 = computeAQIPointInputs(fms.getAverageAQIp1LastYear(), fms.getAverageAQIp2LastYear(), aqicalc);
+				Tuple2<Integer,Integer> t1 = computeAQIPointInputs1000(fms.getAverageAQIp1LastYear(), fms.getAverageAQIp2LastYear(), aqicalc);
 				fms.aqiLastYearP1 = t1.f0;
 				fms.aqiLastYearP2 = t1.f1;
-				Tuple2<Integer,Integer> t2  = computeAQIPointInputs(fms.getAverageAQIp1ThisYear(), fms.getAverageAQIp2ThisYear(), aqicalc);
+				Tuple2<Integer,Integer> t2  = computeAQIPointInputs1000(fms.getAverageAQIp1ThisYear(), fms.getAverageAQIp2ThisYear(), aqicalc);
 				fms.aqiThisYearP1 = t2.f0;
 				fms.aqiThisYearP2 = t2.f1;
 			}
@@ -268,7 +268,7 @@ public class application {
 		}
 	}
 	// We have two functions doing the same thing.
-	public static Tuple2<Integer,Integer> computeAQIPointInputs(double p1, double p2, AQICalculator aqicalc) {
+	public static Tuple2<Integer,Integer> computeAQIPointInputs1000(double p1, double p2, AQICalculator aqicalc) {
 		/*
 			float p1 = 4; //Particles < 10µm (particulate matter)
 			float p2 = 5; //Particles < 2.5µm (ultrafine particles)
@@ -276,8 +276,8 @@ public class application {
 		float pm10 = (float)p1; //measurement.getP1();
 		float pm25 = (float)p2; //measurement.getP2();
 
-		int result10 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI();
-		int result25 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI();
+		int result10 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI() * 1000;
+		int result25 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI() * 1000;
 
 		return new Tuple2<Integer,Integer>(result25,result10);
 //		if (result10 > result25){
@@ -443,13 +443,13 @@ public class application {
 
 			System.out.println(d);
 			java.util.Date time1=new java.util.Date(minTimestampTY*1000);
-			System.out.println("mints TY: " + time1);
+			System.out.println("min timestamp ThisYear: " + time1);
 			java.util.Date time2=new java.util.Date(maxTimestampTY*1000);
-			System.out.println("maxts TY: " +time2);
+			System.out.println("max timestamp ThisYear: " +time2);
 			java.util.Date time3=new java.util.Date(minTimestampLY*1000);
-			System.out.println("mints LY: " + time3);
+			System.out.println("min timestamp LastYear: " + time3);
 			java.util.Date time4=new java.util.Date(maxTimestampLY*1000);
-			System.out.println("maxts LY: " +time4);
+			System.out.println("max timestamp LastYear: " +time4);
 			TimeStampWatermark += 300;
 			out.collect(d);
 //			out.collect(new FiveMinuteSnapshot(avgAqip1,avgAqip2, ));

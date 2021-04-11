@@ -9,8 +9,11 @@ public class FiveMinuteSnapshot {
     double sumAQIp1LastYear = 0;
     double sumAQIp2LastYear = 0;
     int countForAverageLastYear = 0;
-//    String city = "";
-//    long timestamp;
+
+    int aqiThisYearP1;
+    int aqiThisYearP2;
+    int aqiLastYearP1;
+    int aqiLastYearP2;
 
     public FiveMinuteSnapshot()//(String city) //(double aaqi1, double aaqi2, String city) //, long timestamp)
     {
@@ -38,6 +41,20 @@ public class FiveMinuteSnapshot {
     public double getAverageAQIp2LastYear()
     {
         return sumAQIp2LastYear / countForAverageLastYear;
+    }
+
+    public int getMaxAqiThisYear()
+    {
+        if(this.aqiThisYearP1 > this.aqiThisYearP2)
+            return this.aqiThisYearP1;
+        return this.aqiThisYearP2;
+    }
+
+    public int getMaxAqiLastYear()
+    {
+        if(this.aqiLastYearP1 > this.aqiLastYearP2)
+            return this.aqiLastYearP1;
+        return this.aqiLastYearP2;
     }
 
     public String toString() {

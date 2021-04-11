@@ -36,6 +36,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.evictors.Evictor;
 //import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
@@ -96,7 +97,7 @@ public class application {
 
 //		measurements.print();
 		// Set particular parallelism
-		DataStream<Team8Measurement> calculateCityAndAqiAndFilter = measurements.map(new MapCityAndAqi())
+		DataStream<Team8Measurement> calculateCityAndFilter = measurements.map(new MapCity())
 																	.setParallelism(1)
 																	.name("calculateCity")
 																	.filter(m -> !m.city.equals("CITYERROR"))
@@ -116,13 +117,24 @@ public class application {
 
 //		measurementsKeyedByCity.process(new KeyedProcessFunction1()); //for testing
 
-		DataStream<SnapshotDictionary> snapshots = calculateCityAndAqiAndFilter.windowAll(GlobalWindows.create())
+		DataStream<SnapshotDictionary> snapshots = calculateCityAndFilter.windowAll(GlobalWindows.create())
 								.trigger(new TriggerFiveMinutes())
 								.evictor(new EvictFiveMinutes())
 								.process(new MeasurementsToSnapshots())
 								.name("Query 1");
 
-		snapshots.print();
+//		snapshots.print();
+
+		DataStream<SnapshotDictionary> calculateAqi = snapshots.map(new CalculateAqi());
+
+		calculateAqi.windowAll(GlobalWindows.create())
+								.trigger(new TriggerEveryElement())
+								.evictor(new EvictLastElement())
+								.process(new SnapshotsToImprovement())
+								.name("Query 1 still lol yeah");
+
+//		calculateAqi.print();
+
 
 
 //		measurementsKeyedByCity.print();
@@ -134,7 +146,7 @@ public class application {
 //		calculateCity.shuffle();
 
 		// query 2 implementation call
-		calculateHistogram(calculateCityAndAqiAndFilter).print();
+		calculateHistogram(calculateCityAndFilter).print();
 
 		env.execute("Print Measurements Stream");
 	}
@@ -155,12 +167,12 @@ public class application {
 		}
 	}
 
-	private static class MapCityAndAqi implements MapFunction<Team8Measurement,Team8Measurement> {
+	private static class MapCity implements MapFunction<Team8Measurement,Team8Measurement> {
 		@Override
 		public Team8Measurement map(Team8Measurement m) throws Exception {
 			m.city = calculateCity(m);
-			if(!m.city.equals("CITYERROR"))
-				m.aqi = computeAQI(m.measurement, aqicalc);
+//			if(!m.city.equals("CITYERROR"))
+//				m.aqi = computeAQI(m.measurement, aqicalc);
 			return m;
 		}
 
@@ -207,13 +219,16 @@ public class application {
 			return false;
 		}
 
-		private int computeAQI(Measurement measurement, AQICalculator aqicalc) {
+		public int computeAQI(Measurement measurement, AQICalculator aqicalc) {
+			/*
+				float p1 = 4; //Particles < 10µm (particulate matter)
+				float p2 = 5; //Particles < 2.5µm (ultrafine particles)
+			*/
+			float pm10 = measurement.getP1();
+			float pm25 = measurement.getP2();
 
-			float pm25 = measurement.getP1();
-			float pm10 = measurement.getP2();
-
-			int result25 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI();
-			int result10 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI();
+			int result10 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI();
+			int result25 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI();
 
 			if (result10 > result25){
 				return result10;
@@ -237,8 +252,44 @@ public class application {
 //			return m;
 //		}
 //	}
+	private static class CalculateAqi implements MapFunction<SnapshotDictionary, SnapshotDictionary> {
+		@Override
+		public SnapshotDictionary map(SnapshotDictionary m) throws Exception {
 
+			for (FiveMinuteSnapshot fms : m.dict.values())
+			{
+				Tuple2<Integer,Integer> t1 = computeAQIPointInputs(fms.getAverageAQIp1LastYear(), fms.getAverageAQIp2LastYear(), aqicalc);
+				fms.aqiLastYearP1 = t1.f0;
+				fms.aqiLastYearP2 = t1.f1;
+				Tuple2<Integer,Integer> t2  = computeAQIPointInputs(fms.getAverageAQIp1ThisYear(), fms.getAverageAQIp2ThisYear(), aqicalc);
+				fms.aqiThisYearP1 = t2.f0;
+				fms.aqiThisYearP2 = t2.f1;
+			}
+			return m;
+		}
+	}
+	// We have two functions doing the same thing.
+	public static Tuple2<Integer,Integer> computeAQIPointInputs(double p1, double p2, AQICalculator aqicalc) {
+		/*
+			float p1 = 4; //Particles < 10µm (particulate matter)
+			float p2 = 5; //Particles < 2.5µm (ultrafine particles)
+		*/
+		float pm10 = (float)p1; //measurement.getP1();
+		float pm25 = (float)p2; //measurement.getP2();
 
+		int result10 = aqicalc.getAQI(Pollutant.PM10, (double) pm10).getAQI();
+		int result25 = aqicalc.getAQI(Pollutant.PM25, (double) pm25).getAQI();
+
+		return new Tuple2<Integer,Integer>(result25,result10);
+//		if (result10 > result25){
+//			return result10;
+//		}
+//		else {
+//			return result25;
+//		}
+	}
+
+	//////////////////////////////////////////////////////BEGIN FIRST CUSTOM WINDOW//////////////////////////////////////////////////////
 
 	private static class EvictFiveMinutes implements Evictor<Team8Measurement, GlobalWindow> {
 
@@ -272,9 +323,6 @@ public class application {
 //			}
 		}
 	}
-
-
-
 	private static class TriggerFiveMinutes<W extends Window> extends Trigger<Team8Measurement, W> {
 
 		public static LocalDate convertToLocalDateViaMilisecond(java.util.Date dateToConvert) {
@@ -351,8 +399,6 @@ public class application {
 //			ctx.getPartitionedState(stateDesc).clear();
 		}
 	}
-
-
 	private static class MeasurementsToSnapshots extends ProcessAllWindowFunction<Team8Measurement, SnapshotDictionary, TimeWindow> { //String (third one)
 
 		@Override //String key,
@@ -411,6 +457,125 @@ public class application {
 //			out.collect("Window: " + context.window() + "count: " + count);
 		}
 	}
+
+	//////////////////////////////////////////////////////END FIRST CUSTOM WINDOW//////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////BEGIN SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
+
+	private static class EvictLastElement implements Evictor<Team8Measurement, GlobalWindow> {
+
+		@Override
+		public void evictBefore(Iterable<TimestampedValue<Team8Measurement>> events, int size, GlobalWindow window, EvictorContext ctx) {}
+
+		@Override
+		public void evictAfter(Iterable<TimestampedValue<Team8Measurement>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
+
+			for (Iterator<TimestampedValue<Team8Measurement>> iterator = elements.iterator(); iterator.hasNext(); ) {
+				TimestampedValue<Team8Measurement> element = iterator.next();
+				if(!iterator.hasNext())
+					iterator.remove();
+			}
+		}
+	}
+	private static class TriggerEveryElement<W extends Window> extends Trigger<Team8Measurement, W> {
+
+		@Override
+		public TriggerResult onElement(Team8Measurement element, long timestamp, W window, TriggerContext ctx) throws Exception {
+
+			return TriggerResult.FIRE;
+
+		}
+
+		@Override
+		public TriggerResult onProcessingTime(long time, W window, TriggerContext ctx) throws Exception {
+			return TriggerResult.CONTINUE;
+		}
+
+		@Override
+		public TriggerResult onEventTime(long time, W window, TriggerContext ctx) {
+			return TriggerResult.CONTINUE;
+		}
+
+		@Override
+		public void clear(W window, TriggerContext ctx) throws Exception { }
+	}
+	private static class SnapshotsToImprovement extends ProcessAllWindowFunction<SnapshotDictionary, Object, TimeWindow> {
+
+		@Override
+		public void process(Context context, Iterable<SnapshotDictionary> input, Collector<Object> out) {
+
+			Map<String,ImprovementScratchpad> scratch = new HashMap<String,ImprovementScratchpad>();
+
+			for (SnapshotDictionary m: input) {
+				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())
+				{
+					String k = entry.getKey();
+					if (!scratch.containsKey(entry.getKey()))
+						scratch.put(k, new ImprovementScratchpad(k));
+
+					ImprovementScratchpad isp = scratch.get(k);
+					FiveMinuteSnapshot fms = entry.getValue();
+					isp.totalAqiThisYear += fms.getMaxAqiThisYear();
+					isp.countAqiThisYear++;
+					isp.totalAqiLastYear += fms.getMaxAqiLastYear();
+					isp.countAqiLastYear++;
+					isp.updateLatestAqiValues(m.timestamp, fms.aqiThisYearP1, fms.aqiThisYearP2);
+				}
+			}
+
+			List<ImprovementScratchpad> sortedImprovements = new ArrayList<ImprovementScratchpad>(scratch.values());
+			Collections.sort(sortedImprovements, Collections.reverseOrder());
+
+			for (int i = 0; i < sortedImprovements.size(); i++)
+			{
+				ImprovementScratchpad isp = sortedImprovements.get(i);
+
+				//Todo: complete.
+				//This should be everything we need:
+				// (i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)
+				//We just need to pass them somewhere correctly
+				//Below is my attempt, but it doesn't compile
+				
+//				client.resultQ1(new ResultQ1(benchId, batchseq, new TopKCities(i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)));
+			}
+
+			out.collect(null);
+		}
+	}
+	private static class ImprovementScratchpad implements Comparable<ImprovementScratchpad> {
+		int totalAqiThisYear = 0, countAqiThisYear = 0,
+			totalAqiLastYear = 0, countAqiLastYear = 0;
+
+		int currentAqiP1, currentAqiP2;
+		long timestampOfCurrentAqi;
+
+		String city;
+
+		public ImprovementScratchpad(String city)
+		{
+			this.city = city;
+		}
+
+		public int getImprovement()
+		{
+			return (totalAqiLastYear / countAqiLastYear) - (totalAqiThisYear / countAqiThisYear);
+		}
+
+		public void updateLatestAqiValues(long timestamp, int p1, int p2)
+		{
+			if(timestamp > this.timestampOfCurrentAqi)
+			{
+				this.currentAqiP1 = p1;
+				this.currentAqiP2 = p2;
+			}
+		}
+
+		@Override
+		public int compareTo(ImprovementScratchpad isp) {
+			return (int)(this.getImprovement() - isp.getImprovement()); //might be flipped
+		}
+	}
+
+	//////////////////////////////////////////////////////END SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
 
 	// Snigdha
 

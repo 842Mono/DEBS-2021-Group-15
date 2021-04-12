@@ -42,6 +42,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
 
         // Initiate step one and send over the benchmarkConfig
         benchmark = client.createNewBenchmark(benchmarkConfig);
+        application.benchmark = benchmark;
         System.out.println("Benchmark ID: " + benchmark.getId());
         application.benchId = benchmark.getId();
 
@@ -85,12 +86,6 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
                 break;
             }
         }
-    }
-
-    public static void endBench() {
-        // Pseudo code
-        client.endBenchmark(benchmark);
-//        break;
     }
 
     public void cancel() { System.out.println("CANCEL CALLED. TODO."); }

@@ -763,7 +763,7 @@ public class application {
 
 					Tuple2<Long, Long> currentStreak = csMap.get(key);
 					if(currentStreak == null)
-						currentStreak = new Tuple2<Long,Long>();
+						currentStreak = new Tuple2<Long,Long>(0L,0L);
 
 					if (fms.getMaxAqiThisYear() < 50) {
 						if (currentStreak.f0 == 0) {

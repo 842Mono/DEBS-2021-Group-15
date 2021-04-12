@@ -743,8 +743,10 @@ public class application {
 			//first value is for start time of the streak. second value is for duration of the streak
 //			Tuple2<Long, Long> currentStreak = streak.value();
 			Map<String, Tuple2<Long, Long>> csMap = streakMap.value();
-			if(streakMap.value() == null)
-				streakMap.update(new HashMap<String,Tuple2<Long,Long>>());
+			if(streakMap.value() == null) {
+				csMap = new HashMap<String, Tuple2<Long, Long>>();
+				streakMap.update(csMap);
+			}
 
 			//lastTimeStamp and firstTimeStamp needed for bucket lengths later on
 //			long lastTimeStamp = 0L;

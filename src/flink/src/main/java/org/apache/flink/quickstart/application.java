@@ -693,9 +693,15 @@ public class application {
 
 						        for (Tuple4Wrapper mWrapper : elements) {
 									Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
-						        	// calculate which bucket this city belongs in
-						        	int bucket = (int)(m.f1 / bucketWidth);
-						        	counts[bucket]++;
+						        	// check if city is active
+									if (maxTimestamp - m.f3 <= (600)) {
+										// calculate which bucket this city belongs in
+										int bucket = (int)(m.f1 / bucketWidth);
+										counts[bucket]++;
+									} else {
+										// if not active, don't include in the histogram
+										totalCities--;
+									}
 						        }
 
 						        //for each bucket, calculate percentage of cities in it and create a TopKStreaks object

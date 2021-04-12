@@ -695,7 +695,6 @@ public class application {
 																.addAllHistogram(result)
 																.build();
 								client.resultQ2(submitData);
-								client.endBenchmark(benchmark);
 						        out.collect(result);						        
 
 		                    }

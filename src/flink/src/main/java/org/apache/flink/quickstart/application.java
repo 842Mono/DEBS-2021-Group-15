@@ -802,8 +802,8 @@ public class application {
 			ValueStateDescriptor<Map<String,Tuple2<Long, Long>>> descriptor =
 					new ValueStateDescriptor<>(
 							"streaks", // the state name
-							TypeInformation.of(new TypeHint<Map<String,Tuple2<Long, Long>>>() {}), // type information
-							new HashMap<String,Tuple2<Long,Long>>()); // default value of the state, if nothing was set
+							TypeInformation.of(new TypeHint<Map<String,Tuple2<Long, Long>>>() {})); //, // type information
+//							new HashMap<String,Tuple2<Long,Long>>()); // default value of the state, if nothing was set
 			streakMap = getRuntimeContext().getState(descriptor);
 		}
 

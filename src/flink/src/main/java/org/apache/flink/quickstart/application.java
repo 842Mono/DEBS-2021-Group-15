@@ -743,6 +743,8 @@ public class application {
 			//first value is for start time of the streak. second value is for duration of the streak
 //			Tuple2<Long, Long> currentStreak = streak.value();
 			Map<String, Tuple2<Long, Long>> csMap = streakMap.value();
+			if(streakMap.value() == null)
+				streakMap.update(new HashMap<String,Tuple2<Long,Long>>());
 
 			//lastTimeStamp and firstTimeStamp needed for bucket lengths later on
 //			long lastTimeStamp = 0L;
@@ -808,8 +810,6 @@ public class application {
 							TypeInformation.of(new TypeHint<Map<String,Tuple2<Long, Long>>>() {})); //, // type information
 //							new HashMap<String,Tuple2<Long,Long>>()); // default value of the state, if nothing was set
 			streakMap = getRuntimeContext().getState(descriptor);
-			if(streakMap.value() == null)
-				streakMap.update(new HashMap<String,Tuple2<Long,Long>>());
 		}
 
 	}

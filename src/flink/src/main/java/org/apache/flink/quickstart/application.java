@@ -571,6 +571,7 @@ public class application {
 
 			if(closeTheStream)
 			{
+				System.out.println("ATTEMPTING TO END BENCHMARK");
 				query1submittedLastBatch = true;
 				if(query2submittedLastBatch)
 					client.endBenchmark(benchmark);
@@ -720,6 +721,7 @@ public class application {
 
 								if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
 								{
+									System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
 									query2submittedLastBatch = true;
 									if(query1submittedLastBatch)
 										client.endBenchmark(benchmark);

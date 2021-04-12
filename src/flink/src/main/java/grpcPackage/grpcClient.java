@@ -83,10 +83,13 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
                 ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1));
             }
         }
-        if(lastCreatedMeasurement != null)
+        if(lastCreatedMeasurement != null){
             lastCreatedMeasurement.closeTheStream = true;
-        else
+            System.out.println("closeTheStream toggled");
+        }
+        else{
             System.out.println("TEAM8ERROR: This should never happen!");
+        }
 //        client.endBenchmark(benchmark);
     }
 

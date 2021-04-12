@@ -639,108 +639,9 @@ public class application {
 				.process(new IntermediaryBetweenSnapshotsAndStreaks())
 				.rescale();
 
-			// assign cities to buckets based on streak length and output list of TopKStreaks
-			DataStream<List<TopKStreaks>> results = 
-					measurementsKeyedByCity
-					.timeWindowAll(Time.minutes(10))
-					.apply(new AllWindowFunction<Tuple4Wrapper,
-									List<TopKStreaks>, TimeWindow>() {
-
-						@Override
-		                    public void apply(TimeWindow window, 
-		                    				Iterable<Tuple4Wrapper> elements,
-		                    				Collector<List<TopKStreaks>> out) throws Exception {
-
-								boolean closeTheStream = false;
-								int closeTheStreamMax = 0;
-
-		                    	List<TopKStreaks> result = new ArrayList<TopKStreaks>();
-						        int numBuckets = 14;
-						        int maxSpan = 0;
-						        int bucketWidth = 0;
-
-						        int totalCities = 0;
-						        long minTimestamp = Long.MAX_VALUE;
-						        long maxTimestamp = 0L;
-
-						        // first loop for getting the earliest and last timestamp of the batch and total cities
-						        for (Tuple4Wrapper mWrapper : elements) {
-						        	closeTheStream |= mWrapper.closeTheStream;
-						        	if(closeTheStream)
-						        		if(mWrapper.closeStreamCount > closeTheStreamMax)
-						        			closeTheStreamMax = mWrapper.closeStreamCount;
-
-									Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
-						        	if (m.f2 < minTimestamp)
-						        		minTimestamp = m.f2;
-						        	if (m.f3 > maxTimestamp)
-						        		maxTimestamp = m.f3;
-						        	totalCities++;
-
-						        }
-
-						        //get size of each bucket
-						        maxSpan = (int)(maxTimestamp - minTimestamp);
-						        bucketWidth = maxSpan / numBuckets;
-						        if (bucketWidth * numBuckets < maxSpan) {
-						        	bucketWidth++;
-						        }
-
-						        // System.out.println("MaxSpan " + maxSpan + " BucketWidth " + bucketWidth);
-
-						        //array to keep track of number of cities belonging to each bucket
-						        int[] counts = new int[numBuckets];
-
-						        for (Tuple4Wrapper mWrapper : elements) {
-									Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
-						        	// check if city is active
-									if (maxTimestamp - m.f3 <= (600)) {
-										// calculate which bucket this city belongs in
-										int bucket = (int)(m.f1 / bucketWidth);
-										counts[bucket]++;
-									} else {
-										// if not active, don't include in the histogram
-										totalCities--;
-									}
-						        }
-
-						        //for each bucket, calculate percentage of cities in it and create a TopKStreaks object
-						        for (int i = 0; i < counts.length; i++) {
-						        	counts[i] = counts[i] * 100 * 1000 / totalCities;
-						        	int bucket_from = (int) (i*bucketWidth);
-						        	int bucket_to   = (int) (bucket_from + bucketWidth - 1);
-						        	TopKStreaks item = TopKStreaks.newBuilder()
-						        				.setBucketFrom(bucket_from)
-						        				.setBucketTo(bucket_to)
-						        				.setBucketPercent(counts[i])
-						        				.build();
-						        	result.add(item);
-						        }
-
-								ResultQ2 submitData = ResultQ2.newBuilder()
-																.setBenchmarkId(benchId)
-																.setBatchSeqId(batchseq)
-																.addAllHistogram(result)
-																.build();
-								client.resultQ2(submitData);
-								System.out.println("Submitted result 2 data: " + submitData.toString());
-
-								if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
-								{
-									System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
-									query2submittedLastBatch = true;
-									if(query1submittedLastBatch)
-										client.endBenchmark(benchmark);
-								}
-
-						        out.collect(result);						        
-
-		                    }
-		                        
-					});
 
 
-			return results;
+			return null;
 
 	}
 	private static class Tuple4Wrapper {
@@ -842,6 +743,7 @@ public class application {
 
 //			System.out.println("Last time " + lastTimeStamp );
 
+			List<Tuple4Wrapper> toSecondFunction = new ArrayList<Tuple4Wrapper>();
 			Tuple4Wrapper tfw = null;
 			for (Map.Entry<String,Tuple2<Long, Long>> entryCurrentStreak : csMap.entrySet())
 			{
@@ -854,10 +756,12 @@ public class application {
 					if(closeTheStream)
 						tfw.closeStreamCount = ++query2CloseTheStreamCount;
 					//end for closing the stream
-					out.collect(tfw);
+//					out.collect(tfw);
+					toSecondFunction.add(tfw);
 				// streak.clear();
 				}
 			}
+			secondHalf(toSecondFunction);
 		}
 
 		@Override
@@ -868,6 +772,96 @@ public class application {
 							TypeInformation.of(new TypeHint<Map<String,Tuple2<Long, Long>>>() {})); //, // type information
 //							new HashMap<String,Tuple2<Long,Long>>()); // default value of the state, if nothing was set
 			streakMap = getRuntimeContext().getState(descriptor);
+		}
+
+		public void secondHalf(Iterable<Tuple4Wrapper> elements) {
+
+				boolean closeTheStream = false;
+				int closeTheStreamMax = 0;
+
+				List<TopKStreaks> result = new ArrayList<TopKStreaks>();
+				int numBuckets = 14;
+				int maxSpan = 0;
+				int bucketWidth = 0;
+
+				int totalCities = 0;
+				long minTimestamp = Long.MAX_VALUE;
+				long maxTimestamp = 0L;
+
+				// first loop for getting the earliest and last timestamp of the batch and total cities
+				for (Tuple4Wrapper mWrapper : elements) {
+					closeTheStream |= mWrapper.closeTheStream;
+					if(closeTheStream)
+						if(mWrapper.closeStreamCount > closeTheStreamMax)
+							closeTheStreamMax = mWrapper.closeStreamCount;
+
+					Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
+					if (m.f2 < minTimestamp)
+						minTimestamp = m.f2;
+					if (m.f3 > maxTimestamp)
+						maxTimestamp = m.f3;
+					totalCities++;
+
+				}
+
+				//get size of each bucket
+				maxSpan = (int)(maxTimestamp - minTimestamp);
+				bucketWidth = maxSpan / numBuckets;
+				if (bucketWidth * numBuckets < maxSpan) {
+					bucketWidth++;
+				}
+
+				// System.out.println("MaxSpan " + maxSpan + " BucketWidth " + bucketWidth);
+
+				//array to keep track of number of cities belonging to each bucket
+				int[] counts = new int[numBuckets];
+
+				for (Tuple4Wrapper mWrapper : elements) {
+					Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
+					// check if city is active
+					if (maxTimestamp - m.f3 <= (600)) {
+						// calculate which bucket this city belongs in
+						int bucket = (int)(m.f1 / bucketWidth);
+						counts[bucket]++;
+					} else {
+						// if not active, don't include in the histogram
+						totalCities--;
+					}
+				}
+
+				//for each bucket, calculate percentage of cities in it and create a TopKStreaks object
+				for (int i = 0; i < counts.length; i++) {
+					counts[i] = counts[i] * 100 * 1000 / totalCities;
+					int bucket_from = (int) (i*bucketWidth);
+					int bucket_to   = (int) (bucket_from + bucketWidth - 1);
+					TopKStreaks item = TopKStreaks.newBuilder()
+							.setBucketFrom(bucket_from)
+							.setBucketTo(bucket_to)
+							.setBucketPercent(counts[i])
+							.build();
+					result.add(item);
+				}
+
+				ResultQ2 submitData = ResultQ2.newBuilder()
+						.setBenchmarkId(benchId)
+						.setBatchSeqId(batchseq)
+						.addAllHistogram(result)
+						.build();
+				client.resultQ2(submitData);
+				System.out.println("Submitted result 2 data: " + submitData.toString());
+
+				if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
+				{
+					System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
+					query2submittedLastBatch = true;
+					if(query1submittedLastBatch)
+						client.endBenchmark(benchmark);
+				}
+
+//				out.collect(result);
+
+
+
 		}
 
 	}

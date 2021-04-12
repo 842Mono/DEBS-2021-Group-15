@@ -801,13 +801,15 @@ public class application {
 		}
 
 		@Override
-		public void open(Configuration config) {
+		public void open(Configuration config) throws Exception {
 			ValueStateDescriptor<Map<String,Tuple2<Long, Long>>> descriptor =
 					new ValueStateDescriptor<>(
 							"streaks", // the state name
 							TypeInformation.of(new TypeHint<Map<String,Tuple2<Long, Long>>>() {})); //, // type information
 //							new HashMap<String,Tuple2<Long,Long>>()); // default value of the state, if nothing was set
 			streakMap = getRuntimeContext().getState(descriptor);
+			if(streakMap.value() == null)
+				streakMap.update(new HashMap<String,Tuple2<Long,Long>>());
 		}
 
 	}

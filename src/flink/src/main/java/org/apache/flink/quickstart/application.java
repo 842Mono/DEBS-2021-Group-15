@@ -732,7 +732,7 @@ public class application {
 	}
 	private static class IntermediaryBetweenSnapshotsAndStreaks extends ProcessAllWindowFunction<SnapshotDictionary, Tuple4<String, Long, Long, Long>, TimeWindow> {
 
-		private transient ValueState<Tuple2<Long, Long>> streak;
+//		private transient ValueState<Tuple2<Long, Long>> streak;
 		private transient ValueState<Map<String, Tuple2<Long, Long>>> streakMap;
 
 		@Override //String key
@@ -796,6 +796,17 @@ public class application {
 			}
 
 		}
+
+		@Override
+		public void open(Configuration config) {
+			ValueStateDescriptor<Map<String,Tuple2<Long, Long>>> descriptor =
+					new ValueStateDescriptor<>(
+							"streaks", // the state name
+							TypeInformation.of(new TypeHint<Map<String,Tuple2<Long, Long>>>() {}), // type information
+							new HashMap<String,Tuple2<Long,Long>>()); // default value of the state, if nothing was set
+			streakMap = getRuntimeContext().getState(descriptor);
+		}
+
 	}
 
 	//////////////////////////////////////////////////////END SECOND CUSTOM WINDOW//////////////////////////////////////////////////////

@@ -89,6 +89,7 @@ public class application {
 
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		env.setParallelism(24);
 		grpcClient grpc = new grpcClient();
 		DataStream<Team8Measurement> measurements = env.addSource(grpc)
 														.name("API")

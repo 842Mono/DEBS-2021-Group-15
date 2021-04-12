@@ -828,6 +828,10 @@ public class application {
 					}
 				}
 
+				//hack!
+				if(totalCities == 0)
+					totalCities = 1;
+
 				//for each bucket, calculate percentage of cities in it and create a TopKStreaks object
 				for (int i = 0; i < counts.length; i++) {
 					counts[i] = counts[i] * 100 * 1000 / totalCities;

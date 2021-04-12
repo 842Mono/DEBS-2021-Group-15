@@ -68,7 +68,6 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         Batch batch = client.nextBatch(benchmark);
         //Process the events
         while(!batch.getLast()) {
-            batch = client.nextBatch(benchmark);
             application.batchseq = batch.getSeqId();
             List<Measurement> currentYearMeasurements = batch.getCurrentList();
             List<Measurement> lastYearMeasurements = batch.getLastyearList();
@@ -76,6 +75,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
             for(int i = 0; i < currentYearMeasurements.size(); ++i) {
                 ctx.collect(new Team8Measurement(currentYearMeasurements.get(i), "ThisYear", i == currentYearMeasurements.size() - 1));
             }
+            batch = client.nextBatch(benchmark);
             for(int i = 0; i < lastYearMeasurements.size(); ++i)
             {
                 Team8Measurement m = new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1);

@@ -79,8 +79,10 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
             for(int i = 0; i < lastYearMeasurements.size(); ++i)
             {
                 Team8Measurement m = new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1);
-                if(batch.getLast())
+                if(batch.getLast()){
                     m.closeTheStream = true;
+                    System.out.println("GRPC TOGGLE");
+                }
                 ctx.collect(m);
             }
         }

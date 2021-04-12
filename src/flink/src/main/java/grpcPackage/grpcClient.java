@@ -65,10 +65,10 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         // Start benchmark, the race is on
         client.startBenchmark(benchmark);
         System.out.println("Bechmark Started!");
-
+        Batch batch = client.nextBatch(benchmark);
         //Process the events
         while(!batch.getLast()) {
-            Batch batch = client.nextBatch(benchmark);
+            batch = client.nextBatch(benchmark);
             application.batchseq = batch.getSeqId();
             List<Measurement> currentYearMeasurements = batch.getCurrentList();
             List<Measurement> lastYearMeasurements = batch.getLastyearList();

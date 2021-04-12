@@ -717,7 +717,7 @@ public class application {
 																.build();
 								client.resultQ2(submitData);
 
-								if(closeTheStream && query2CloseTheStreamCount == closeTheStreamMax)
+								if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
 								{
 									query2submittedLastBatch = true;
 									if(query1submittedLastBatch)

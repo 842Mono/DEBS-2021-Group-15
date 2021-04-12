@@ -146,7 +146,7 @@ public class application {
 //		calculateCity.shuffle();
 
 		// query 2 implementation call
-		calculateHistogram(calculateCityAndFilter);
+		calculateHistogram(calculateAqi);
 
 		env.execute("Print Measurements Stream");
 	}
@@ -607,80 +607,24 @@ public class application {
 
 	// Snigdha
 
-	private static DataStream<List<TopKStreaks>> calculateHistogram(DataStream<Team8Measurement>  calculateCity) throws Exception {
+	private static DataStream<List<TopKStreaks>> calculateHistogram(DataStream<SnapshotDictionary> input) throws Exception {
     
     
 
 		// filter measurements for current year
-		DataStream<Team8Measurement> currentYearData = calculateCity.filter(m -> m.year.equals("ThisYear")).name("Current year filter");
+//		DataStream<Team8Measurement> currentYearData = input.filter(m -> m.year.equals("ThisYear")).name("Current year filter");
 		
 		// sets attribute isGood of Team8Measurement for each measurement, true if good AQI value, false otherwise																											
-       	DataStream<Team8Measurement> calculateGoodAQIs = currentYearData.map(new MapGoodAQIs()).name("Good streak finder");
+//       	DataStream<Team8Measurement> calculateGoodAQIs = currentYearData.map(new MapGoodAQIs()).name("Good streak finder");
        	
        	// key by city and calculate streaks of good AQI values for each city						
-        DataStream<Tuple4<String, Long, Long, Long>> measurementsKeyedByCity = calculateGoodAQIs
-			.keyBy(m -> m.city)
-			.window(EventTimeSessionWindows.withGap(Time.minutes(10)))
-			.process(new ProcessWindowFunction<Team8Measurement, Tuple4<String, Long, Long, Long>, String, TimeWindow>() {
-                    
-					private transient ValueState<Tuple2<Long, Long>> streak;
-
-                    @Override
-                    public void process(String key, Context c, Iterable<Team8Measurement> elements, 
-                    							Collector<Tuple4<String, Long, Long, Long>> out) throws Exception {
-                        
-                        //first value is for start time of the streak. second value is for duration of the streak
-				        Tuple2<Long, Long> currentStreak = streak.value();
-
-				        //lastTimeStamp and firstTimeStamp needed for bucket lengths later on
-				        long lastTimeStamp = 0L;
-				        long firstTimeStamp = 0L;
-                        
-						for (Team8Measurement m : elements) {
-							
-							if (m.isGood) {
-								if (currentStreak.f0 == 0) {
-				              	  currentStreak.f0 = m.timestamp;
-				            	}
-				            	// revieved a good aqi value so update the duration 
-				            	currentStreak.f1 = m.timestamp - currentStreak.f0;
-				            }
-							else {
-								// we recieve a bad AQI value so reset start time and duration
-								currentStreak.f0 = 0L;
-				            	currentStreak.f1 = 0L;
-							}
-
-							lastTimeStamp = m.timestamp;
-							if (firstTimeStamp == 0)
-								firstTimeStamp = m.timestamp;
-								
-						}
-                        // update the state
-				        streak.update(currentStreak);
-
-				        System.out.println("Last time " + lastTimeStamp );
-
-                        if (currentStreak.f1 != 0) {
-
-				                out.collect(new Tuple4<>(key, currentStreak.f1, firstTimeStamp, lastTimeStamp));
-				                // streak.clear();
-				        }
-
-                    }
-
-
-                    @Override
-				    public void open(Configuration config) {
-				        ValueStateDescriptor<Tuple2<Long, Long>> descriptor =
-				                new ValueStateDescriptor<>(
-				                        "streaks", // the state name
-				                        TypeInformation.of(new TypeHint<Tuple2<Long, Long>>() {}), // type information
-				                        Tuple2.of(0L, 0L)); // default value of the state, if nothing was set
-				        streak = getRuntimeContext().getState(descriptor);
-				    }
-
-                });
+        DataStream<Tuple4<String, Long, Long, Long>> measurementsKeyedByCity = input//calculateGoodAQIs
+//				.keyBy(m -> m.city)
+				.windowAll(GlobalWindows.create())
+//				.windowAll(EventTimeSessionWindows.withGap(Time.minutes(10)))
+				.trigger(new TriggerEveryElement())
+				.evictor(new EvictLastElement7Days())
+				.process(new IntermediaryBetweenSnapshotsAndStreaks());
 
 			// assign cities to buckets based on streak length and output list of TopKStreaks
 			DataStream<List<TopKStreaks>> results = 
@@ -758,12 +702,105 @@ public class application {
 		                        
 					});
 
-					return results;
 
-				}
+			return results;
+
+	}
 
 
 	// End calculateHistogram
+
+
+	//////////////////////////////////////////////////////BEGIN THIRD CUSTOM WINDOW//////////////////////////////////////////////////////
+
+	private static class EvictLastElement7Days implements Evictor<SnapshotDictionary, GlobalWindow> {
+
+		@Override
+		public void evictBefore(Iterable<TimestampedValue<SnapshotDictionary>> events, int size, GlobalWindow window, EvictorContext ctx) {}
+
+		@Override
+		public void evictAfter(Iterable<TimestampedValue<SnapshotDictionary>> elements, int size, GlobalWindow window, Evictor.EvictorContext ctx) {
+
+			int count = 0;
+			for (Iterator<TimestampedValue<SnapshotDictionary>> iterator = elements.iterator(); iterator.hasNext(); ) {
+
+				TimestampedValue<SnapshotDictionary> element = iterator.next();
+//				if(!iterator.hasNext())
+				if(count > 2016)
+					iterator.remove();
+				++count;
+			}
+		}
+	}
+	private static class IntermediaryBetweenSnapshotsAndStreaks extends ProcessAllWindowFunction<SnapshotDictionary, Tuple4<String, Long, Long, Long>, TimeWindow> {
+
+		private transient ValueState<Tuple2<Long, Long>> streak;
+		private transient ValueState<Map<String, Tuple2<Long, Long>>> streakMap;
+
+		@Override //String key
+		public void process(Context c, Iterable<SnapshotDictionary> elements,
+							Collector<Tuple4<String, Long, Long, Long>> out) throws Exception {
+
+			//first value is for start time of the streak. second value is for duration of the streak
+//			Tuple2<Long, Long> currentStreak = streak.value();
+			Map<String, Tuple2<Long, Long>> csMap = streakMap.value();
+
+			//lastTimeStamp and firstTimeStamp needed for bucket lengths later on
+//			long lastTimeStamp = 0L;
+//			long firstTimeStamp = 0L;
+			Map<String, Long> ltsMap = new HashMap<String, Long>();
+			Map<String, Long> ftsMap = new HashMap<String, Long>();
+
+			for (SnapshotDictionary m : elements)
+			{
+				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())
+				{
+					String key = entry.getKey();
+					FiveMinuteSnapshot fms = entry.getValue();
+
+					Tuple2<Long, Long> currentStreak = csMap.get(key);
+
+					if (fms.getMaxAqiThisYear() < 50) {
+						if (currentStreak.f0 == 0) {
+							currentStreak.f0 = m.timestamp;
+						}
+						// revieved a good aqi value so update the duration
+						currentStreak.f1 = m.timestamp - currentStreak.f0;
+						csMap.put(key, currentStreak);
+					}
+					else {
+						// we recieve a bad AQI value so reset start time and duration
+						currentStreak.f0 = 0L;
+						currentStreak.f1 = 0L;
+						csMap.put(key, currentStreak);
+					}
+
+					ltsMap.put(key, m.timestamp);
+					if (ftsMap.get(key) == null || ftsMap.get(key) == 0) //not sure how to convert this one
+						ftsMap.put(key, m.timestamp);
+				}
+
+			}
+			// update the state
+//			streak.update(currentStreak);
+			streakMap.update(csMap);
+
+//			System.out.println("Last time " + lastTimeStamp );
+
+			for (Map.Entry<String,Tuple2<Long, Long>> entryCurrentStreak : csMap.entrySet())
+			{
+				Tuple2<Long, Long> currentStreak = entryCurrentStreak.getValue();
+				String key = entryCurrentStreak.getKey();
+				if (currentStreak.f1 != 0){
+				out.collect(new Tuple4<>(key, currentStreak.f1, ftsMap.get(key), ltsMap.get(key)));
+				// streak.clear();
+				}
+			}
+
+		}
+	}
+
+	//////////////////////////////////////////////////////END SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
 
 }
 

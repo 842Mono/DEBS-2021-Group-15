@@ -33,6 +33,7 @@ import com.thanglequoc.aqicalculator.AQICalculator;
 import com.thanglequoc.aqicalculator.AQIResult;
 import com.thanglequoc.aqicalculator.Pollutant;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
@@ -87,6 +88,8 @@ public class application {
 	public static boolean query1submittedLastBatch = false, query2submittedLastBatch = false;
 	public static int query2CloseTheStreamCount = 0;
 
+	public static Map<String,Long> query2TimeStamps = new HashMap<String,Long>();
+
 	public static void main(String[] args) throws Exception {
 
 
@@ -136,7 +139,12 @@ public class application {
 
 //		calculateAqi.print();
 
-
+		calculateAqi.process(new SnapshotsToHistograms());
+//				.windowAll(GlobalWindows.create())
+//				.trigger(new TriggerEveryElement())
+//				.evictor(new EvictLastElement7Days())
+//				.process(new SnapshotsToHistograms())
+//				.name("Query 2");
 
 //		measurementsKeyedByCity.print();
 
@@ -147,7 +155,7 @@ public class application {
 //		calculateCity.shuffle();
 
 		// query 2 implementation call
-		calculateHistogram(calculateAqi);
+//		calculateHistogram(calculateAqi);
 
 		env.execute("Print Measurements Stream");
 	}
@@ -837,6 +845,7 @@ public class application {
 					counts[i] = counts[i] * 100 * 1000 / totalCities;
 					int bucket_from = (int) (i*bucketWidth);
 					int bucket_to   = (int) (bucket_from + bucketWidth - 1);
+					System.out.println("Percentage = " + counts[i]);
 					TopKStreaks item = TopKStreaks.newBuilder()
 							.setBucketFrom(bucket_from)
 							.setBucketTo(bucket_to)
@@ -868,6 +877,89 @@ public class application {
 		}
 
 	}
+	private static class SnapshotsToHistograms extends ProcessFunction<SnapshotDictionary, Object> {
+
+		@Override
+		public void processElement(SnapshotDictionary input, Context context, Collector<Object> out) {
+
+			boolean closeTheStream = false;
+			List<TopKStreaks> result = new ArrayList<TopKStreaks>();
+
+			for (Map.Entry<String,FiveMinuteSnapshot> entry : input.dict.entrySet())
+			{
+				closeTheStream |= input.closeTheStream;
+				String k = entry.getKey();
+				FiveMinuteSnapshot v = entry.getValue();
+				if (!query2TimeStamps.containsKey(entry.getKey()))
+					query2TimeStamps.put(k, -1L);
+
+				if(v.getMaxAqiThisYear() < 50) //<=?
+					if(query2TimeStamps.get(k) == -1)
+						query2TimeStamps.put(k, input.timestamp);
+				else
+					query2TimeStamps.put(k, -1L);
+			}
+
+//			query2TimeStamps.size();
+
+			ArrayList<Integer> lengthsInHalfDays = new ArrayList<Integer>();
+			for (long t : query2TimeStamps.values())
+				if(t == -1)
+					lengthsInHalfDays.add(0);
+				else
+				{
+					double x = Math.floor((input.timestamp - t)/43200) > 13 ? 13 : Math.floor((input.timestamp - t)/43200);
+					lengthsInHalfDays.add((int)x);
+				}
+
+			Collections.sort(lengthsInHalfDays);
+			int[] finalCounts = new int[14];
+
+			for (int i = 0; i < 14 ; i++)
+			{
+				int count = 0;
+				while(!lengthsInHalfDays.isEmpty() && lengthsInHalfDays.get(0) == i)
+				{
+					++count;
+					lengthsInHalfDays.remove(0);
+				}
+				finalCounts[i] = count;
+			}
+
+			for (int i = 0; i < 14 ; i++)
+			{
+				System.out.println("Percentage = " + finalCounts[i]);
+				TopKStreaks item = TopKStreaks.newBuilder()
+						.setBucketFrom(i)
+						.setBucketTo(i+1)
+						.setBucketPercent((finalCounts[i]/query2TimeStamps.size())*100)
+						.build();
+				result.add(item);
+			}
+
+			ResultQ2 submitData = ResultQ2.newBuilder()
+					.setBenchmarkId(benchId)
+					.setBatchSeqId(batchseq)
+					.addAllHistogram(result)
+					.build();
+			client.resultQ2(submitData);
+			System.out.println("Submitted result 2 data: " + submitData.toString());
+
+			if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
+			{
+				System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
+				query2submittedLastBatch = true;
+				if(query1submittedLastBatch)
+					client.endBenchmark(benchmark);
+			}
+			out.collect(null);
+		}
+	}
+
+//	public static class HistogramCountryData {
+//		long timestampSinceFirstFoundGood = -1; //-1 if bad
+//
+//	}
 
 	//////////////////////////////////////////////////////END SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
 

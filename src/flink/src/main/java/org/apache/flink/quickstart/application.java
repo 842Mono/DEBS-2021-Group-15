@@ -101,7 +101,6 @@ public class application {
 //		measurements.print();
 		// Set particular parallelism
 		DataStream<Team8Measurement> calculateCityAndFilter = measurements.map(new MapCity())
-																	.setParallelism(4)
 																	.name("calculateCity")
 																	.filter(m -> !m.city.equals("CITYERROR"));
 

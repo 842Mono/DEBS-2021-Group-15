@@ -67,7 +67,6 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         System.out.println("Bechmark Started!");
         Batch batch = client.nextBatch(benchmark);
         //Process the events
-        Team8Measurement lastCreatedMeasurement = null;
         while(!batch.getLast()) {
             batch = client.nextBatch(benchmark);
             application.batchseq = batch.getSeqId();
@@ -75,21 +74,23 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
             List<Measurement> lastYearMeasurements = batch.getLastyearList();
 
             for(int i = 0; i < currentYearMeasurements.size(); ++i) {
-                lastCreatedMeasurement = new Team8Measurement(currentYearMeasurements.get(i), "ThisYear", i == currentYearMeasurements.size() - 1);
-                ctx.collect(lastCreatedMeasurement);
+                ctx.collect(new Team8Measurement(currentYearMeasurements.get(i), "ThisYear", i == currentYearMeasurements.size() - 1));
             }
             for(int i = 0; i < lastYearMeasurements.size(); ++i)
             {
-                ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1));
+                Team8Measurement m = new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1);
+                if(!batch.getLast())
+                    m.closeTheStream = true;
+                ctx.collect(m);
             }
         }
-        if(lastCreatedMeasurement != null){
-            lastCreatedMeasurement.closeTheStream = true;
-            System.out.println("closeTheStream toggled");
-        }
-        else{
-            System.out.println("TEAM8ERROR: This should never happen!");
-        }
+//        if(lastCreatedMeasurement != null){
+//            lastCreatedMeasurement.closeTheStream = true;
+//            System.out.println("closeTheStream toggled");
+//        }
+//        else{
+//            System.out.println("TEAM8ERROR: This should never happen!");
+//        }
 //        client.endBenchmark(benchmark);
     }
 

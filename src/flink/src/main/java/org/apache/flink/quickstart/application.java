@@ -412,6 +412,9 @@ public class application {
 					d.dict.get(m.city).sumAQIp1ThisYear += m.measurement.getP1();
 					d.dict.get(m.city).sumAQIp2ThisYear  += m.measurement.getP2();
 					d.dict.get(m.city).countForAverageThisYear += 1;
+
+					if(d.dict.get(m.city).latestTimestamp < msec)
+						d.dict.get(m.city).latestTimestamp = msec;
 				}
 				else if(m.year.equals("LastYear") && msec <= timeLastYear)
 				{
@@ -499,9 +502,13 @@ public class application {
 
 			Map<String,ImprovementScratchpad> scratch = new HashMap<String,ImprovementScratchpad>();
 			boolean closeTheStream = false;
+			long latestTimeStamp = 0;
 
-			for (SnapshotDictionary m: input) {
+			for (SnapshotDictionary m: input)
+			{
 				closeTheStream |= m.closeTheStream;
+				if(latestTimeStamp < m.timestamp)
+					latestTimeStamp = m.timestamp;
 				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())
 				{
 					String k = entry.getKey();
@@ -515,6 +522,8 @@ public class application {
 					isp.totalAqiLastYear += fms.getMaxAqiLastYear();
 					isp.countAqiLastYear++;
 					isp.updateLatestAqiValues(m.timestamp, fms.aqiThisYearP1, fms.aqiThisYearP2);
+					if(isp.latestTimeStamp < fms.latestTimestamp)
+						isp.latestTimeStamp = fms.latestTimestamp;
 				}
 			}
 
@@ -528,18 +537,22 @@ public class application {
 			else {
 				iterations = 50;
 			}
+			int position = 1;
 			for (int i = 0; i < iterations; i++)
 			{
 				ImprovementScratchpad isp = sortedImprovements.get(i);
-				TopKCities curCity = TopKCities.newBuilder()
-												.setPosition(i+1)
-												.setCity(isp.city)
-												.setAverageAQIImprovement(isp.getImprovement())
-												.setCurrentAQIP1(isp.currentAqiP1)
-												.setCurrentAQIP2(isp.currentAqiP2)
-												.build();
 
-				topkresult.add(curCity);
+				if(isp.latestTimeStamp >= latestTimeStamp - 600)
+				{
+					TopKCities curCity = TopKCities.newBuilder()
+							.setPosition(position++)
+							.setCity(isp.city)
+							.setAverageAQIImprovement(isp.getImprovement())
+							.setCurrentAQIP1(isp.currentAqiP1)
+							.setCurrentAQIP2(isp.currentAqiP2)
+							.build();
+					topkresult.add(curCity);
+				}
 
 
 
@@ -573,6 +586,8 @@ public class application {
 		long timestampOfCurrentAqi;
 
 		String city;
+
+		long latestTimeStamp = 0;
 
 		public ImprovementScratchpad(String city)
 		{

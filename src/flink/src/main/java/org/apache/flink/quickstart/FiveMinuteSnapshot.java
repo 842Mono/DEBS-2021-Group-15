@@ -15,6 +15,8 @@ public class FiveMinuteSnapshot {
     int aqiLastYearP1;
     int aqiLastYearP2;
 
+    long latestTimestamp = 0;
+
     public FiveMinuteSnapshot()//(String city) //(double aaqi1, double aaqi2, String city) //, long timestamp)
     {
 //        this.averageAQIp1 = aaqi1;

@@ -67,7 +67,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         System.out.println("Bechmark Started!");
 
         //Process the events
-        while(true) {
+        while(!batch.getLast()) {
             Batch batch = client.nextBatch(benchmark);
             application.batchseq = batch.getSeqId();
             List<Measurement> currentYearMeasurements = batch.getCurrentList();
@@ -80,12 +80,8 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
             {
                 ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1));
             }
-
-            if (batch.getLast()) { //Stop when we get the last batch
-                System.out.println("Received lastbatch, finished!");
-                break;
-            }
         }
+        client.endBenchmark(benchmark);
     }
 
     public void cancel() { System.out.println("CANCEL CALLED. TODO."); }

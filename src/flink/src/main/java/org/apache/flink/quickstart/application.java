@@ -716,6 +716,7 @@ public class application {
 																.addAllHistogram(result)
 																.build();
 								client.resultQ2(submitData);
+								System.out.println("Submitted result 2 data: " + submitData.toString());
 
 								if(closeTheStream && query2CloseTheStreamCount == closeTheStreamMax)
 								{

@@ -139,7 +139,7 @@ public class application {
 
 //		calculateAqi.print();
 
-		calculateAqi.process(new SnapshotsToHistograms());
+		calculateAqi.process(new SnapshotsToHistograms()).name("Query 2");
 //				.windowAll(GlobalWindows.create())
 //				.trigger(new TriggerEveryElement())
 //				.evictor(new EvictLastElement7Days())
@@ -583,7 +583,7 @@ public class application {
 				if(query2submittedLastBatch)
 					client.endBenchmark(benchmark);
 			}
-			out.collect(null);
+			out.collect(submitData);
 		}
 	}
 	private static class ImprovementScratchpad implements Comparable<ImprovementScratchpad> {
@@ -950,7 +950,7 @@ public class application {
 				if(query1submittedLastBatch)
 					client.endBenchmark(benchmark);
 			}
-			out.collect(null);
+			out.collect(submitData);
 		}
 	}
 

@@ -872,8 +872,6 @@ public class application {
 
 //				out.collect(result);
 
-
-
 		}
 
 	}

@@ -623,7 +623,8 @@ public class application {
 //				.windowAll(EventTimeSessionWindows.withGap(Time.minutes(10)))
 				.trigger(new TriggerEveryElement())
 				.evictor(new EvictLastElement7Days())
-				.process(new IntermediaryBetweenSnapshotsAndStreaks());
+				.process(new IntermediaryBetweenSnapshotsAndStreaks())
+				.rescale();
 
 			// assign cities to buckets based on streak length and output list of TopKStreaks
 			DataStream<List<TopKStreaks>> results = 

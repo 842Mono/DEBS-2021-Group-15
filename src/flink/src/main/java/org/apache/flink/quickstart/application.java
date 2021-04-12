@@ -128,7 +128,7 @@ public class application {
 
 		calculateAqi.windowAll(GlobalWindows.create())
 								.trigger(new TriggerEveryElement())
-								.evictor(new EvictLastElement())
+								.evictor(new EvictLastElement5Days())
 								.process(new SnapshotsToImprovement())
 								.name("Query 1 continued");
 
@@ -311,6 +311,11 @@ public class application {
 				}
 			}
 
+			if(currentYearLastMeasurementTimestamp > TimeStampWatermark + 300)
+				TimeStampWatermark += 300;
+			currentYearLastMeasurementTimestamp = -1;
+			lastYearLastMeasurementTimestamp = -1;
+
 //			long firstStop = ConnectedCarEvent.earliestStopElement(elements);
 //
 //			// remove all events up to (and including) the first stop event (which is the event that triggered the window)
@@ -324,12 +329,6 @@ public class application {
 	}
 	private static class TriggerFiveMinutes<W extends Window> extends Trigger<Team8Measurement, W> {
 
-		public static LocalDate convertToLocalDateViaMilisecond(java.util.Date dateToConvert) {
-			return Instant.ofEpochMilli(dateToConvert.getTime())
-					.atZone(ZoneId.systemDefault())
-					.toLocalDate();
-		}
-
 		@Override
 		public TriggerResult onElement(Team8Measurement element, long timestamp, W window, TriggerContext ctx) throws Exception {
 //			ReducingState<Long> count = ctx.getPartitionedState(stateDesc);
@@ -342,7 +341,7 @@ public class application {
 
 
 //			System.out.println(element.measurement.getTimestamp().getSeconds());
-			java.util.Date time=new java.util.Date((long)element.measurement.getTimestamp().getSeconds()*1000);
+//			java.util.Date time=new java.util.Date((long)element.measurement.getTimestamp().getSeconds()*1000);
 //			System.out.println(time);
 
 			long elementTime = element.measurement.getTimestamp().getSeconds();
@@ -352,31 +351,13 @@ public class application {
 				lastYearLastMeasurementTimestamp = elementTime;
 			if(currentYearLastMeasurementTimestamp != -1 && lastYearLastMeasurementTimestamp != -1)
 			{
-				long copyCYLMTS = currentYearLastMeasurementTimestamp;
-				currentYearLastMeasurementTimestamp = -1;
-				lastYearLastMeasurementTimestamp = -1;
-				if(copyCYLMTS >= TimeStampWatermark)
-					return TriggerResult.FIRE;
+//				long copyCYLMTS = currentYearLastMeasurementTimestamp;
+//				currentYearLastMeasurementTimestamp = -1;
+//				lastYearLastMeasurementTimestamp = -1;
+//				if(copyCYLMTS >= TimeStampWatermark)
+				return TriggerResult.FIRE;
 			}
 			return TriggerResult.CONTINUE;
-
-
-
-//			if(element.isLastMeasurementInBatch)
-//			{
-//				if(element.year.equals("ThisYear"))
-//					currentYearLastMeasurementTimestamp = element.measurement.getTimestamp().getSeconds();
-//				else // should always be last year
-//					lastYearLastMeasurementTimestamp = element.measurement.getTimestamp().getSeconds();
-//				if(currentYearLastMeasurementTimestamp != -1 && lastYearLastMeasurementTimestamp != -1)
-//				{
-//					if(currentYearLastMeasurementTimestamp >= TimeStampWatermark)
-//					{
-//
-//					}
-//				}
-//			}
-//			return TriggerResult.CONTINUE;
 		}
 
 
@@ -450,7 +431,7 @@ public class application {
 			System.out.println("min timestamp LastYear: " + time3);
 			java.util.Date time4=new java.util.Date(maxTimestampLY*1000);
 			System.out.println("max timestamp LastYear: " +time4);
-			TimeStampWatermark += 300;
+//			TimeStampWatermark += 300;
 			out.collect(d);
 //			out.collect(new FiveMinuteSnapshot(avgAqip1,avgAqip2, ));
 //			out.collect("Window: " + context.window() + "count: " + count);
@@ -462,7 +443,7 @@ public class application {
 	//////////////////////////////////////////////////////END FIRST CUSTOM WINDOW//////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////BEGIN SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
 
-	private static class EvictLastElement implements Evictor<SnapshotDictionary, GlobalWindow> {
+	private static class EvictLastElement5Days implements Evictor<SnapshotDictionary, GlobalWindow> {
 
 		@Override
 		public void evictBefore(Iterable<TimestampedValue<SnapshotDictionary>> events, int size, GlobalWindow window, EvictorContext ctx) {}

@@ -665,7 +665,7 @@ public class application {
 	// End calculateHistogram
 
 
-	//////////////////////////////////////////////////////BEGIN THIRD CUSTOM WINDOW//////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////BEGIN THIRD CUSTOM not-a-WINDOW-actually//////////////////////////////////////////////////////
 
 	private static class EvictLastElement7Days implements Evictor<SnapshotDictionary, GlobalWindow> {
 
@@ -891,7 +891,7 @@ public class application {
 				if (!query2TimeStamps.containsKey(entry.getKey()))
 					query2TimeStamps.put(k, -1L);
 
-				if(v.getMaxAqiThisYear() < 50) //<=?
+				if(v.getMaxAqiThisYear() < 50 * 1000) //<=?
 					if(query2TimeStamps.get(k) == -1)
 						query2TimeStamps.put(k, input.timestamp);
 				else
@@ -953,11 +953,6 @@ public class application {
 			out.collect(submitData);
 		}
 	}
-
-//	public static class HistogramCountryData {
-//		long timestampSinceFirstFoundGood = -1; //-1 if bad
-//
-//	}
 
 	//////////////////////////////////////////////////////END SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
 

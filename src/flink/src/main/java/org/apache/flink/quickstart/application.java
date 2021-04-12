@@ -344,7 +344,7 @@ public class application {
 
 //			System.out.println(element.measurement.getTimestamp().getSeconds());
 			java.util.Date time=new java.util.Date((long)element.measurement.getTimestamp().getSeconds()*1000);
-			System.out.println(time);
+//			System.out.println(time);
 
 			long elementTime = element.measurement.getTimestamp().getSeconds();
 			if(element.isLastMeasurementInBatch && element.year.equals("ThisYear"))

@@ -13,11 +13,18 @@ public class Team8Measurement implements Comparable<Team8Measurement>, Serializa
     boolean isGood = false;
     long timestamp;
 
+    public boolean closeTheStream = false;
+
     public Team8Measurement(Measurement measurement, String year, boolean isLastMeasurementInBatch) {
         this.measurement = measurement;
         this.year = year;
         this.isLastMeasurementInBatch = isLastMeasurementInBatch;
         this.timestamp = measurement.getTimestamp().getSeconds();
+    }
+
+    public Team8Measurement()
+    {
+        this.closeTheStream = true;
     }
 
     @Override

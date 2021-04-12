@@ -7,6 +7,8 @@ public class SnapshotDictionary {
     Map<String, FiveMinuteSnapshot> dict;
     long timestamp;
 
+    boolean closeTheStream = false;
+
     public SnapshotDictionary(long timestamp)
     {
         this.timestamp = timestamp;

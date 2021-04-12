@@ -67,6 +67,7 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
         System.out.println("Bechmark Started!");
         Batch batch = client.nextBatch(benchmark);
         //Process the events
+        Team8Measurement lastCreatedMeasurement = null;
         while(!batch.getLast()) {
             batch = client.nextBatch(benchmark);
             application.batchseq = batch.getSeqId();
@@ -74,14 +75,19 @@ public class grpcClient extends RichSourceFunction<Team8Measurement> { //<Data> 
             List<Measurement> lastYearMeasurements = batch.getLastyearList();
 
             for(int i = 0; i < currentYearMeasurements.size(); ++i) {
-                ctx.collect(new Team8Measurement(currentYearMeasurements.get(i), "ThisYear", i == currentYearMeasurements.size() - 1));
+                lastCreatedMeasurement = new Team8Measurement(currentYearMeasurements.get(i), "ThisYear", i == currentYearMeasurements.size() - 1);
+                ctx.collect(lastCreatedMeasurement);
             }
             for(int i = 0; i < lastYearMeasurements.size(); ++i)
             {
                 ctx.collect(new Team8Measurement(lastYearMeasurements.get(i), "LastYear", i == lastYearMeasurements.size() - 1));
             }
         }
-        client.endBenchmark(benchmark);
+        if(lastCreatedMeasurement != null)
+            lastCreatedMeasurement.closeTheStream = true;
+        else
+            System.out.println("TEAM8ERROR: This should never happen!");
+//        client.endBenchmark(benchmark);
     }
 
     public void cancel() { System.out.println("CANCEL CALLED. TODO."); }

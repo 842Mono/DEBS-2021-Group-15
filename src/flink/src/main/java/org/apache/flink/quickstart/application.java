@@ -84,6 +84,9 @@ public class application {
 	public static int TimeStampWatermark = 1585699500; // Wed Apr 01 2020 00:05:00 GMT+0000
 	public static long currentYearLastMeasurementTimestamp = -1, lastYearLastMeasurementTimestamp = -1;
 
+	public static boolean query1submittedLastBatch = false, query2submittedLastBatch = false;
+	public static int query2CloseTheStreamCount = 0;
+
 	public static void main(String[] args) throws Exception {
 
 
@@ -392,6 +395,8 @@ public class application {
 
 			long timeLastYear = TimeStampWatermark - 31536000;
 			for (Team8Measurement m: input) {
+				d.closeTheStream = m.closeTheStream;
+
 				long msec = m.measurement.getTimestamp().getSeconds();
 
 				if(!d.dict.containsKey(m.city))
@@ -493,8 +498,10 @@ public class application {
 		public void process(Context context, Iterable<SnapshotDictionary> input, Collector<Object> out) {
 
 			Map<String,ImprovementScratchpad> scratch = new HashMap<String,ImprovementScratchpad>();
+			boolean closeTheStream = false;
 
 			for (SnapshotDictionary m: input) {
+				closeTheStream |= m.closeTheStream;
 				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())
 				{
 					String k = entry.getKey();
@@ -534,6 +541,8 @@ public class application {
 
 				topkresult.add(curCity);
 
+
+
 //				client.resultQ1(new ResultQ1(benchId, batchseq, new TopKCities(i, isp.city, isp.getImprovement(), isp.currentAqiP1, isp.currentAqiP2)));
 			}
 
@@ -546,6 +555,13 @@ public class application {
 			client.resultQ1(submitData);
 			System.out.println("Submitted data for batch: " + batchseq);
 			System.out.println(submitData.toString());
+
+			if(closeTheStream)
+			{
+				query1submittedLastBatch = true;
+				if(query2submittedLastBatch)
+					client.endBenchmark(benchmark);
+			}
 			out.collect(null);
 		}
 	}
@@ -598,7 +614,7 @@ public class application {
 //       	DataStream<Team8Measurement> calculateGoodAQIs = currentYearData.map(new MapGoodAQIs()).name("Good streak finder");
        	
        	// key by city and calculate streaks of good AQI values for each city						
-        DataStream<Tuple4<String, Long, Long, Long>> measurementsKeyedByCity = input//calculateGoodAQIs
+        DataStream<Tuple4Wrapper> measurementsKeyedByCity = input//calculateGoodAQIs
 //				.keyBy(m -> m.city)
 				.windowAll(GlobalWindows.create())
 //				.windowAll(EventTimeSessionWindows.withGap(Time.minutes(10)))
@@ -611,13 +627,16 @@ public class application {
 			DataStream<List<TopKStreaks>> results = 
 					measurementsKeyedByCity
 					.timeWindowAll(Time.minutes(10))
-					.apply(new AllWindowFunction<Tuple4<String, Long, Long, Long>, 
+					.apply(new AllWindowFunction<Tuple4Wrapper,
 									List<TopKStreaks>, TimeWindow>() {
 
 						@Override
 		                    public void apply(TimeWindow window, 
-		                    				Iterable<Tuple4<String, Long, Long, Long>> elements, 
+		                    				Iterable<Tuple4Wrapper> elements,
 		                    				Collector<List<TopKStreaks>> out) throws Exception {
+
+								boolean closeTheStream = false;
+								int closeTheStreamMax = 0;
 
 		                    	List<TopKStreaks> result = new ArrayList<TopKStreaks>();
 						        int numBuckets = 14;
@@ -629,8 +648,13 @@ public class application {
 						        long maxTimestamp = 0L;
 
 						        // first loop for getting the earliest and last timestamp of the batch and total cities
-						        for (Tuple4<String, Long, Long, Long> m : elements) {
+						        for (Tuple4Wrapper mWrapper : elements) {
+						        	closeTheStream |= mWrapper.closeTheStream;
+						        	if(closeTheStream)
+						        		if(mWrapper.closeStreamCount > closeTheStreamMax)
+						        			closeTheStreamMax = mWrapper.closeStreamCount;
 
+									Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
 						        	if (m.f2 < minTimestamp)
 						        		minTimestamp = m.f2;
 						        	if (m.f3 > maxTimestamp)
@@ -651,7 +675,8 @@ public class application {
 						        //array to keep track of number of cities belonging to each bucket
 						        int[] counts = new int[numBuckets];
 
-						        for (Tuple4<String, Long, Long, Long> m : elements) {
+						        for (Tuple4Wrapper mWrapper : elements) {
+									Tuple4<String, Long, Long, Long> m = mWrapper.tuple4;
 						        	// calculate which bucket this city belongs in
 						        	int bucket = (int)(m.f1 / bucketWidth);
 						        	counts[bucket]++;
@@ -676,6 +701,14 @@ public class application {
 																.addAllHistogram(result)
 																.build();
 								client.resultQ2(submitData);
+
+								if(closeTheStream && query2CloseTheStreamCount == closeTheStreamMax)
+								{
+									query2submittedLastBatch = true;
+									if(query1submittedLastBatch)
+										client.endBenchmark(benchmark);
+								}
+
 						        out.collect(result);						        
 
 		                    }
@@ -686,7 +719,16 @@ public class application {
 			return results;
 
 	}
+	private static class Tuple4Wrapper {
+		Tuple4<String, Long, Long, Long> tuple4;
+		boolean closeTheStream = false;
+		public int closeStreamCount = 0;
 
+		public Tuple4Wrapper(Tuple4<String, Long, Long, Long> tuple4)
+		{
+			this.tuple4 = tuple4;
+		}
+	}
 
 	// End calculateHistogram
 
@@ -712,14 +754,16 @@ public class application {
 			}
 		}
 	}
-	private static class IntermediaryBetweenSnapshotsAndStreaks extends ProcessAllWindowFunction<SnapshotDictionary, Tuple4<String, Long, Long, Long>, TimeWindow> {
+	private static class IntermediaryBetweenSnapshotsAndStreaks extends ProcessAllWindowFunction<SnapshotDictionary, Tuple4Wrapper, TimeWindow> {
 
 //		private transient ValueState<Tuple2<Long, Long>> streak;
 		private transient ValueState<Map<String, Tuple2<Long, Long>>> streakMap;
 
 		@Override //String key
 		public void process(Context c, Iterable<SnapshotDictionary> elements,
-							Collector<Tuple4<String, Long, Long, Long>> out) throws Exception {
+							Collector<Tuple4Wrapper> out) throws Exception {
+
+			boolean closeTheStream = false;
 
 			//first value is for start time of the streak. second value is for duration of the streak
 //			Tuple2<Long, Long> currentStreak = streak.value();
@@ -737,6 +781,7 @@ public class application {
 
 			for (SnapshotDictionary m : elements)
 			{
+				closeTheStream |= m.closeTheStream;
 				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())
 				{
 					String key = entry.getKey();
@@ -773,16 +818,22 @@ public class application {
 
 //			System.out.println("Last time " + lastTimeStamp );
 
+			Tuple4Wrapper tfw = null;
 			for (Map.Entry<String,Tuple2<Long, Long>> entryCurrentStreak : csMap.entrySet())
 			{
 				Tuple2<Long, Long> currentStreak = entryCurrentStreak.getValue();
 				String key = entryCurrentStreak.getKey();
 				if (currentStreak.f1 != 0){
-				out.collect(new Tuple4<>(key, currentStreak.f1, ftsMap.get(key), ltsMap.get(key)));
+					tfw = new Tuple4Wrapper(new Tuple4<>(key, currentStreak.f1, ftsMap.get(key), ltsMap.get(key)));
+					//begin for closing the stream
+					tfw.closeTheStream = closeTheStream;
+					if(closeTheStream)
+						tfw.closeStreamCount = ++query2CloseTheStreamCount;
+					//end for closing the stream
+					out.collect(tfw);
 				// streak.clear();
 				}
 			}
-
 		}
 
 		@Override

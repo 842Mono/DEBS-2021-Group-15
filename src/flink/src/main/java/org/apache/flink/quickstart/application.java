@@ -915,10 +915,10 @@ public class application
 				if (!query2TimeStamps.containsKey(k))
 					query2TimeStamps.put(k, new TwoTimeStamps());
 
-				query2TimeStamps.get(k).mostRecentTimeStamp = input.timestamp;
+				query2TimeStamps.get(k).mostRecentTimeStamp = v.latestTimestamp;
 				if(v.getMaxAqiThisYear() < 50 * 1000) { //<=?
 					if (query2TimeStamps.get(k).streakTimeStamp == -1) {
-						query2TimeStamps.get(k).streakTimeStamp = input.timestamp;
+						query2TimeStamps.get(k).streakTimeStamp = v.latestTimestamp;
 					}
 				}
 				else

@@ -399,10 +399,9 @@ public class application {
 
 			SnapshotDictionary d = new SnapshotDictionary(TimeStampWatermark);
 
-
 			long timeLastYear = TimeStampWatermark - 31536000;
 			for (Team8Measurement m: input) {
-				d.closeTheStream = m.closeTheStream;
+				d.closeTheStream |= m.closeTheStream;
 
 				long msec = m.measurement.getTimestamp().getSeconds();
 
@@ -580,8 +579,11 @@ public class application {
 			{
 				System.out.println("ATTEMPTING TO END BENCHMARK");
 				query1submittedLastBatch = true;
-				if(query2submittedLastBatch)
+				System.out.println("Condition 3 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
+				if(query2submittedLastBatch) {
+					System.out.println("Condition 4 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
 					client.endBenchmark(benchmark);
+				}
 			}
 			out.collect(submitData);
 		}
@@ -958,8 +960,11 @@ public class application {
 			{
 				System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
 				query2submittedLastBatch = true;
-				if(query1submittedLastBatch)
+				System.out.println("Condition 1 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
+				if(query1submittedLastBatch) {
+					System.out.println("Condition 2 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
 					client.endBenchmark(benchmark);
+				}
 			}
 			out.collect(submitData);
 		}

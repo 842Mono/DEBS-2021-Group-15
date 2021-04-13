@@ -402,8 +402,6 @@ public class application {
 
 			long timeLastYear = TimeStampWatermark - 31536000;
 			for (Team8Measurement m: input) {
-				d.closeTheStream |= m.closeTheStream;
-
 				long msec = m.measurement.getTimestamp().getSeconds();
 
 				if(!d.dict.containsKey(m.city))
@@ -500,10 +498,18 @@ public class application {
 		public void clear(W window, TriggerContext ctx) throws Exception { }
 	}
 	private static class SnapshotsToImprovement extends ProcessAllWindowFunction<SnapshotDictionary, Object, TimeWindow> {
-		// Bug here:
-		// java.lang.ClassCastException: class org.apache.flink.quickstart.SnapshotDictionary 
-		// cannot be cast to class org.apache.flink.quickstart.Team8Measurement 
-		// (org.apache.flink.quickstart.SnapshotDictionary and org.apache.flink.quickstart.Team8Measurement are in unnamed module of loader 
+
+		@Override
+		public void close()
+		{
+			System.out.println("ATTEMPTING TO END BENCHMARK");
+			query1submittedLastBatch = true;
+
+			if(query2submittedLastBatch) {
+				client.endBenchmark(benchmark);
+			}
+		}
+
 		@Override
 		public void process(Context context, Iterable<SnapshotDictionary> input, Collector<Object> out) {
 
@@ -513,7 +519,6 @@ public class application {
 
 			for (SnapshotDictionary m: input)
 			{
-				closeTheStream |= m.closeTheStream;
 				if(latestTimeStamp < m.timestamp)
 					latestTimeStamp = m.timestamp;
 				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())
@@ -576,16 +581,10 @@ public class application {
 			System.out.println("Submitted data for batch: " + batchseq);
 			System.out.println(submitData.toString());
 
-			if(closeTheStream)
-			{
-				System.out.println("ATTEMPTING TO END BENCHMARK");
-				query1submittedLastBatch = true;
-				System.out.println("Condition 3 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
-				if(query2submittedLastBatch) {
-					System.out.println("Condition 4 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
-					client.endBenchmark(benchmark);
-				}
-			}
+//			if(closeTheStream)
+//			{
+//
+//			}
 			out.collect(submitData);
 		}
 	}
@@ -881,6 +880,17 @@ public class application {
 	private static class SnapshotsToHistograms extends ProcessFunction<SnapshotDictionary, Object> {
 
 		@Override
+		public void close() throws Exception
+		{
+			System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
+			query2submittedLastBatch = true;
+
+			if(query1submittedLastBatch) {
+				client.endBenchmark(benchmark);
+			}
+		}
+
+		@Override
 		public void processElement(SnapshotDictionary input, Context context, Collector<Object> out) {
 
 			boolean closeTheStream = false;
@@ -888,7 +898,6 @@ public class application {
 
 			for (Map.Entry<String,FiveMinuteSnapshot> entry : input.dict.entrySet())
 			{
-				closeTheStream |= input.closeTheStream;
 				String k = entry.getKey();
 				FiveMinuteSnapshot v = entry.getValue();
 				if (!query2TimeStamps.containsKey(k))
@@ -919,14 +928,14 @@ public class application {
 				if (t == -1)
 					lengthsInHalfDays.add(0);
 				else {
-					System.out.println("input.timestamp = " + input.timestamp);
-					System.out.println("t = " + t);
-					System.out.println("(input.timestamp - t) = " + (input.timestamp - t));
+//					System.out.println("input.timestamp = " + input.timestamp);
+//					System.out.println("t = " + t);
+//					System.out.println("(input.timestamp - t) = " + (input.timestamp - t));
 //					System.out.println("(input.timestamp - t)/(2.5*60) = " + (input.timestamp - t)/(2.5*60));
 					double y = Math.floor((input.timestamp - t) / histogramWidth);
-					System.out.println("y = " + y);
+//					System.out.println("y = " + y);
 					double x = y > 13 ? 13 : y;
-					System.out.println("x = " + x);
+//					System.out.println("x = " + x);
 					lengthsInHalfDays.add((int) x);
 				}
 			}
@@ -968,16 +977,10 @@ public class application {
 			client.resultQ2(submitData);
 			System.out.println("Submitted result 2 data: " + submitData.toString());
 
-			if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
-			{
-				System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
-				query2submittedLastBatch = true;
-				System.out.println("Condition 1 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
-				if(query1submittedLastBatch) {
-					System.out.println("Condition 2 [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[");
-					client.endBenchmark(benchmark);
-				}
-			}
+//			if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
+//			{
+//
+//			}
 			out.collect(submitData);
 		}
 	}

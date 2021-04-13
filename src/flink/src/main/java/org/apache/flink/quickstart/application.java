@@ -30,14 +30,14 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import grpcPackage.grpcClient;
 
 import com.thanglequoc.aqicalculator.AQICalculator;
-import com.thanglequoc.aqicalculator.AQIResult;
+//import com.thanglequoc.aqicalculator.AQIResult;
 import com.thanglequoc.aqicalculator.Pollutant;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
-import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
+//import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
+//import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.evictors.Evictor;
 //import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
@@ -48,33 +48,30 @@ import org.apache.flink.streaming.api.windowing.windows.Window;
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue;
 import org.apache.flink.util.Collector;
 
-import org.apache.flink.streaming.api.windowing.time.Time;
-
-import javax.xml.crypto.KeySelector;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.ZoneId;
+//import org.apache.flink.streaming.api.windowing.time.Time;
+//
+//import javax.xml.crypto.KeySelector;
+//import java.time.Instant;
+//import java.time.LocalDate;
+//import java.time.Period;
+//import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.List;
 
 import com.grpc.ChallengerGrpc.ChallengerBlockingStub;
 
 // added by Snigdha
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
+//import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.typeinfo.*;
 import org.apache.flink.api.java.tuple.*;
-import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
-import org.apache.flink.streaming.api.windowing.assigners.EventTimeSessionWindows;
+//import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
+//import org.apache.flink.streaming.api.windowing.assigners.EventTimeSessionWindows;
 import org.apache.flink.api.common.state.*;
 import org.apache.flink.configuration.*;
 import java.util.*;
 
-/**
- * A simple Flink program that processes the Wikipedia edits stream.
- **/
-public class application {
-
+public class application
+{
 	public static Locations GlobalLocations;
 	public static long benchId;
 	public static long batchseq;
@@ -87,13 +84,12 @@ public class application {
 	public static long currentYearLastMeasurementTimestamp = -1, lastYearLastMeasurementTimestamp = -1;
 
 	public static boolean query1submittedLastBatch = false, query2submittedLastBatch = false;
-	public static int query2CloseTheStreamCount = 0;
+//	public static int query2CloseTheStreamCount = 0;
 
 	public static Map<String,TwoTimeStamps> query2TimeStamps = new HashMap<String,TwoTimeStamps>();
 
-	public static void main(String[] args) throws Exception {
-
-
+	public static void main(String[] args) throws Exception
+	{
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setParallelism(24);
@@ -126,7 +122,7 @@ public class application {
 								.trigger(new TriggerFiveMinutes())
 								.evictor(new EvictFiveMinutes())
 								.process(new MeasurementsToSnapshots())
-								.name("Query 1");
+								.name("Measurements to Snapshots");
 
 //		snapshots.print();
 
@@ -136,7 +132,7 @@ public class application {
 								.trigger(new TriggerEveryElement())
 								.evictor(new EvictLastElement5Days())
 								.process(new SnapshotsToImprovement())
-								.name("Query 1 continued");
+								.name("Query 1");
 
 //		calculateAqi.print();
 
@@ -393,15 +389,16 @@ public class application {
 	private static class MeasurementsToSnapshots extends ProcessAllWindowFunction<Team8Measurement, SnapshotDictionary, TimeWindow> { //String (third one)
 
 		@Override //String key,
-		public void process(Context context, Iterable<Team8Measurement> input, Collector<SnapshotDictionary> out) {
-
+		public void process(Context context, Iterable<Team8Measurement> input, Collector<SnapshotDictionary> out)
+		{
 			//for testing
-			long minTimestampTY = 158569950000L, maxTimestampTY = 0, minTimestampLY = 158569950000L, maxTimestampLY = 0 ;
+			long minTimestampTY = 158569950000L, maxTimestampTY = 0, minTimestampLY = 158569950000L, maxTimestampLY = 0; // the min values are just large values.
 
 			SnapshotDictionary d = new SnapshotDictionary(TimeStampWatermark);
 
 			long timeLastYear = TimeStampWatermark - 31536000;
-			for (Team8Measurement m: input) {
+			for (Team8Measurement m: input)
+			{
 				long msec = m.measurement.getTimestamp().getSeconds();
 
 				if(!d.dict.containsKey(m.city))
@@ -502,11 +499,15 @@ public class application {
 		@Override
 		public void close()
 		{
-			System.out.println("ATTEMPTING TO END BENCHMARK");
-			query1submittedLastBatch = true;
+			if(!query1submittedLastBatch)
+			{
+				System.out.println("ATTEMPTING TO END BENCHMARK");
+				query1submittedLastBatch = true;
 
-			if(query2submittedLastBatch) {
-				client.endBenchmark(benchmark);
+				if(query2submittedLastBatch) {
+					System.out.println("Closing connection.");
+					client.endBenchmark(benchmark);
+				}
 			}
 		}
 
@@ -629,8 +630,6 @@ public class application {
 	// Snigdha
 
 	private static DataStream<List<TopKStreaks>> calculateHistogram(DataStream<SnapshotDictionary> input) throws Exception {
-    
-    
 
 		// filter measurements for current year
 //		DataStream<Team8Measurement> currentYearData = input.filter(m -> m.year.equals("ThisYear")).name("Current year filter");
@@ -648,10 +647,7 @@ public class application {
 				.process(new IntermediaryBetweenSnapshotsAndStreaks())
 				.rescale();
 
-
-
 			return null;
-
 	}
 	private static class Tuple4Wrapper {
 		Tuple4<String, Long, Long, Long> tuple4;
@@ -761,9 +757,9 @@ public class application {
 				if (currentStreak.f1 != 0){
 					tfw = new Tuple4Wrapper(new Tuple4<>(key, currentStreak.f1, ftsMap.get(key), ltsMap.get(key)));
 					//begin for closing the stream
-					tfw.closeTheStream = closeTheStream;
-					if(closeTheStream)
-						tfw.closeStreamCount = ++query2CloseTheStreamCount;
+//					tfw.closeTheStream = closeTheStream;
+//					if(closeTheStream)
+//						tfw.closeStreamCount = ++query2CloseTheStreamCount;
 					//end for closing the stream
 //					out.collect(tfw);
 					toSecondFunction.add(tfw);
@@ -866,12 +862,12 @@ public class application {
 
 				if(closeTheStream) // && query2CloseTheStreamCount == closeTheStreamMax)
 				{
-					System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
-					query2submittedLastBatch = true;
-					if(query1submittedLastBatch) {
-						System.out.println("Closing connection.");
-						client.endBenchmark(benchmark);
-					}
+//					System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
+//					query2submittedLastBatch = true;
+//					if(query1submittedLastBatch) {
+//						System.out.println("Closing connection.");
+//						client.endBenchmark(benchmark);
+//					}
 
 				}
 
@@ -880,17 +876,21 @@ public class application {
 		}
 
 	}
+
 	private static class SnapshotsToHistograms extends ProcessFunction<SnapshotDictionary, Object> {
 
 		@Override
 		public void close() throws Exception
 		{
-			System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
-			query2submittedLastBatch = true;
+			if(!query2submittedLastBatch)
+			{
+				System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
+				query2submittedLastBatch = true;
 
-			if(query1submittedLastBatch) {
-				System.out.println("Closing connection.");
-				client.endBenchmark(benchmark);
+				if(query1submittedLastBatch) {
+					System.out.println("Closing connection.");
+					client.endBenchmark(benchmark);
+				}
 			}
 		}
 
@@ -958,11 +958,13 @@ public class application {
 				finalCounts[i] = count;
 			}
 
-			long histogramBiggestValue = 604800 * (histogramWidth/43200);
+			double histogramBiggestValue = 604800 * ((1.0*histogramWidth)/43200.0);
 			for (int i = 0; i < 14 ; i++)
 			{
 				double beginningLimit = ((i*1.0)/(14.0))*histogramBiggestValue,
 						endingLimit = (((i+1)*1.0)/(14.0))*histogramBiggestValue;
+				System.out.println("beginningLimit = " + beginningLimit);
+				System.out.println("endingLimit = " + endingLimit);
 				System.out.println("Count = " + finalCounts[i]);
 				System.out.println("Percentage = " + ((finalCounts[i]*1.0)/(query2TimeStamps.size()*1.0))*100);
 				TopKStreaks item = TopKStreaks.newBuilder()
@@ -997,7 +999,7 @@ public class application {
 		}
 	}
 
-	//////////////////////////////////////////////////////END SECOND CUSTOM WINDOW//////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////END SECOND CUSTOM not-a-WINDOW-actually//////////////////////////////////////////////////////
 
 }
 

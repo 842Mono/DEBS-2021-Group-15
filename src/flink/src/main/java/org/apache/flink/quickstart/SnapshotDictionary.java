@@ -17,7 +17,7 @@ public class SnapshotDictionary {
 
     public String toString()
     {
-        return "Timestamp = " + timestamp + "\nNumber of elements in dictionary = " + dict.size() + "\n" +
-                "closeTheStream = " + closeTheStream + "]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]";
+        return "Timestamp = " + timestamp + "\nNumber of elements in dictionary = " + dict.size() + "\n"; // +
+//                "closeTheStream = " + closeTheStream;
     }
 }

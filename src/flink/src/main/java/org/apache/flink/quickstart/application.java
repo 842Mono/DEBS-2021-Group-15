@@ -888,12 +888,14 @@ public class application {
 				closeTheStream |= input.closeTheStream;
 				String k = entry.getKey();
 				FiveMinuteSnapshot v = entry.getValue();
-				if (!query2TimeStamps.containsKey(entry.getKey()))
+				if (!query2TimeStamps.containsKey(k))
 					query2TimeStamps.put(k, -1L);
 
-				if(v.getMaxAqiThisYear() < 50 * 1000) //<=?
-					if(query2TimeStamps.get(k) == -1)
+				if(v.getMaxAqiThisYear() < 50 * 1000) { //<=?
+					if (query2TimeStamps.get(k) == -1) {
 						query2TimeStamps.put(k, input.timestamp);
+					}
+				}
 				else
 					query2TimeStamps.put(k, -1L);
 			}
@@ -901,12 +903,20 @@ public class application {
 //			query2TimeStamps.size();
 
 			ArrayList<Integer> lengthsInHalfDays = new ArrayList<Integer>();
+			System.out.println("input.timestamp = " + input.timestamp);
 			for (long t : query2TimeStamps.values())
 				if(t == -1)
 					lengthsInHalfDays.add(0);
 				else
 				{
-					double x = Math.floor((input.timestamp - t)/43200) > 13 ? 13 : Math.floor((input.timestamp - t)/43200);
+					System.out.println("input.timestamp = " + input.timestamp);
+					System.out.println("t = " + t);
+					System.out.println("(input.timestamp - t) = " + (input.timestamp - t));
+					System.out.println("(input.timestamp - t)/(2.5*60) = " + (input.timestamp - t)/(2.5*60));
+					double y = Math.floor((input.timestamp - t)/(2.5*60));//43200);
+					System.out.println("y = " + y);
+					double x = y > 13 ? 13 : y;
+					System.out.println("x = " + x);
 					lengthsInHalfDays.add((int)x);
 				}
 
@@ -926,7 +936,8 @@ public class application {
 
 			for (int i = 0; i < 14 ; i++)
 			{
-				System.out.println("Percentage = " + finalCounts[i]);
+				System.out.println("Count = " + finalCounts[i]);
+				System.out.println("Percentage = " + (finalCounts[i]/query2TimeStamps.size())*100);
 				TopKStreaks item = TopKStreaks.newBuilder()
 						.setBucketFrom(i)
 						.setBucketTo(i+1)

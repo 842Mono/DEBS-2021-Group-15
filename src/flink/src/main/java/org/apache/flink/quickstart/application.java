@@ -937,7 +937,7 @@ public class application {
 			for (int i = 0; i < 14 ; i++)
 			{
 				System.out.println("Count = " + finalCounts[i]);
-				System.out.println("Percentage = " + (finalCounts[i]/query2TimeStamps.size())*100);
+				System.out.println("Percentage = " + ((finalCounts[i]*1.0)/(query2TimeStamps.size()*1.0))*100);
 				TopKStreaks item = TopKStreaks.newBuilder()
 						.setBucketFrom(i)
 						.setBucketTo(i+1)

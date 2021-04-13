@@ -912,8 +912,8 @@ public class application {
 					System.out.println("input.timestamp = " + input.timestamp);
 					System.out.println("t = " + t);
 					System.out.println("(input.timestamp - t) = " + (input.timestamp - t));
-					System.out.println("(input.timestamp - t)/(2.5*60) = " + (input.timestamp - t)/(2.5*60));
-					double y = Math.floor((input.timestamp - t)/(2.5*60));//43200);
+//					System.out.println("(input.timestamp - t)/(2.5*60) = " + (input.timestamp - t)/(2.5*60));
+					double y = Math.floor((input.timestamp - t)/43200);
 					System.out.println("y = " + y);
 					double x = y > 13 ? 13 : y;
 					System.out.println("x = " + x);

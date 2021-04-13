@@ -83,12 +83,13 @@ public class application {
 	public static AQICalculator aqicalc = AQICalculator.getAQICalculatorInstance();
 
 	public static int TimeStampWatermark = 1585699500; // Wed Apr 01 2020 00:05:00 GMT+0000
+	final public static int FirstEverTimeStamp = 1585699500;
 	public static long currentYearLastMeasurementTimestamp = -1, lastYearLastMeasurementTimestamp = -1;
 
 	public static boolean query1submittedLastBatch = false, query2submittedLastBatch = false;
 	public static int query2CloseTheStreamCount = 0;
 
-	public static Map<String,Long> query2TimeStamps = new HashMap<String,Long>();
+	public static Map<String,TwoTimeStamps> query2TimeStamps = new HashMap<String,TwoTimeStamps>();
 
 	public static void main(String[] args) throws Exception {
 
@@ -891,36 +892,44 @@ public class application {
 				String k = entry.getKey();
 				FiveMinuteSnapshot v = entry.getValue();
 				if (!query2TimeStamps.containsKey(k))
-					query2TimeStamps.put(k, -1L);
+					query2TimeStamps.put(k, new TwoTimeStamps());
 
+				query2TimeStamps.get(k).mostRecentTimeStamp = input.timestamp;
 				if(v.getMaxAqiThisYear() < 50 * 1000) { //<=?
-					if (query2TimeStamps.get(k) == -1) {
-						query2TimeStamps.put(k, input.timestamp);
+					if (query2TimeStamps.get(k).streakTimeStamp == -1) {
+						query2TimeStamps.get(k).streakTimeStamp = input.timestamp;
 					}
 				}
 				else
-					query2TimeStamps.put(k, -1L);
+					query2TimeStamps.get(k).streakTimeStamp = -1L;
 			}
 
-//			query2TimeStamps.size();
+			for(TwoTimeStamps tt : query2TimeStamps.values())
+				if (input.timestamp - tt.mostRecentTimeStamp > 600)
+					tt.streakTimeStamp = -1L;
+
+			long histogramWidth = input.timestamp - FirstEverTimeStamp > 43200 ? 43200 : input.timestamp - FirstEverTimeStamp;
+			if(histogramWidth == 0)
+				histogramWidth = 1;
 
 			ArrayList<Integer> lengthsInHalfDays = new ArrayList<Integer>();
 			System.out.println("input.timestamp = " + input.timestamp);
-			for (long t : query2TimeStamps.values())
-				if(t == -1)
+			for (TwoTimeStamps tt : query2TimeStamps.values()) {
+				long t = tt.streakTimeStamp;
+				if (t == -1)
 					lengthsInHalfDays.add(0);
-				else
-				{
+				else {
 					System.out.println("input.timestamp = " + input.timestamp);
 					System.out.println("t = " + t);
 					System.out.println("(input.timestamp - t) = " + (input.timestamp - t));
 //					System.out.println("(input.timestamp - t)/(2.5*60) = " + (input.timestamp - t)/(2.5*60));
-					double y = Math.floor((input.timestamp - t)/43200);
+					double y = Math.floor((input.timestamp - t) / histogramWidth);
 					System.out.println("y = " + y);
 					double x = y > 13 ? 13 : y;
 					System.out.println("x = " + x);
-					lengthsInHalfDays.add((int)x);
+					lengthsInHalfDays.add((int) x);
 				}
+			}
 
 			Collections.sort(lengthsInHalfDays);
 			int[] finalCounts = new int[14];
@@ -936,13 +945,16 @@ public class application {
 				finalCounts[i] = count;
 			}
 
+			long histogramBiggestValue = 604800 * (histogramWidth/43200);
 			for (int i = 0; i < 14 ; i++)
 			{
+				double beginningLimit = ((i*1.0)/(14.0))*histogramBiggestValue,
+						endingLimit = (((i+1)*1.0)/(14.0))*histogramBiggestValue;
 				System.out.println("Count = " + finalCounts[i]);
 				System.out.println("Percentage = " + ((finalCounts[i]*1.0)/(query2TimeStamps.size()*1.0))*100);
 				TopKStreaks item = TopKStreaks.newBuilder()
-						.setBucketFrom(i)
-						.setBucketTo(i+1)
+						.setBucketFrom((int)beginningLimit)
+						.setBucketTo((int)endingLimit)
 						.setBucketPercent((finalCounts[i]/query2TimeStamps.size())*100)
 						.build();
 				result.add(item);
@@ -967,6 +979,14 @@ public class application {
 				}
 			}
 			out.collect(submitData);
+		}
+	}
+	public static class TwoTimeStamps { //just a more descriptive Tuple2 I guess.
+		public long streakTimeStamp = -1L;
+		public long mostRecentTimeStamp = -1L;
+		public TwoTimeStamps() {
+			this.streakTimeStamp = -1L;
+			this.mostRecentTimeStamp = -1L;
 		}
 	}
 

@@ -868,8 +868,11 @@ public class application {
 				{
 					System.out.println("ATTEMPTING TO TERMINATE BENCHMARK");
 					query2submittedLastBatch = true;
-					if(query1submittedLastBatch)
+					if(query1submittedLastBatch) {
+						System.out.println("Closing connection.");
 						client.endBenchmark(benchmark);
+					}
+
 				}
 
 //				out.collect(result);
@@ -886,6 +889,7 @@ public class application {
 			query2submittedLastBatch = true;
 
 			if(query1submittedLastBatch) {
+				System.out.println("Closing connection.");
 				client.endBenchmark(benchmark);
 			}
 		}

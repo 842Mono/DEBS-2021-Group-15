@@ -518,8 +518,16 @@ public class application
 			boolean closeTheStream = false;
 			long latestTimeStamp = 0;
 
+			Map<Long,Long> dups = new HashMap<Long,Long>();
+
 			for (SnapshotDictionary m: input)
 			{
+				//haaak
+				if(dups.containsKey(m.timestamp))
+					continue;
+				else
+					dups.put(m.timestamp,m.timestamp);
+
 				if(latestTimeStamp < m.timestamp)
 					latestTimeStamp = m.timestamp;
 				for (Map.Entry<String,FiveMinuteSnapshot> entry : m.dict.entrySet())

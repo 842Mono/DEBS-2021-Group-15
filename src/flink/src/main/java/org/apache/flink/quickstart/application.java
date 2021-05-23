@@ -522,7 +522,6 @@ public class application
 
 			for (SnapshotDictionary m: input)
 			{
-				//haaak
 				if(dups.containsKey(m.timestamp))
 					continue;
 				else
